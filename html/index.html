@@ -12,7 +12,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="..\css/dashboard.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
     
     <style>
         /* Chart Container Adjustment */
@@ -80,19 +80,19 @@
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending</div>
+                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending Review</div>
                             <div class="stat-number text-warning-glow" id="pendingCount">0</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Resolved</div>
+                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Approved</div>
                             <div class="stat-number text-success-glow" id="resolvedCount">0</div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="stat-card">
-                            <div class="card-header-custom"><i class="fas fa-chart-line"></i> Response Rate</div>
+                            <div class="card-header-custom"><i class="fas fa-chart-line"></i> Approval Rate</div>
                             <div class="stat-number" style="color: #3498db; text-shadow: 0 0 10px #3498db;" id="responseRate">0%</div>
                         </div>
                     </div>
@@ -173,25 +173,29 @@
         
         onSnapshot(q, (snapshot) => {
             let total = 0;
-            let resolved = 0;
-            let pending = 0;
+            let approved = 0;
+            let pendingReview = 0;
+            let spam = 0;
 
             snapshot.forEach((doc) => {
                 total++;
                 const status = doc.data().status;
-                if (status === "Resolved") resolved++;
-                else pending++; 
+                if (status === "Approved") approved++;
+                else if (status === "Pending Review") pendingReview++;
+                else if (status === "Spam") spam++;
             });
 
             // Update Stats
-            let rate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+            let countableTotal = approved + pendingReview;
+            let rate = countableTotal > 0 ? Math.round((approved / countableTotal) * 100) : 0;
+            
             document.getElementById("totalCount").innerText = total;
-            document.getElementById("resolvedCount").innerText = resolved;
-            document.getElementById("pendingCount").innerText = pending;
-            document.getElementById("responseRate").innerText = rate + "%";
+            document.getElementById("resolvedCount").innerText = approved; // Approved is the "resolved" state
+            document.getElementById("pendingCount").innerText = pendingReview; // Pending Review is the "pending" state
+            document.getElementById("responseRate").innerText = rate + "%"; // Now Approval Rate
 
             // Update Chart
-            updateChart(total, pending, resolved);
+            updateChart(total, pendingReview, approved, spam);
         });
     }
 
@@ -211,16 +215,24 @@
             if (!snapshot.empty) {
                 snapshot.forEach((doc) => {
                     const data = doc.data();
-                    const badgeClass = data.status === "Resolved" ? "badge-neon-success" : "badge-neon-warning";
-                    
+                    const status = data.status || 'Pending Review';
+                    let badgeClass;
+                    if (status === "Approved") {
+                        badgeClass = "badge-neon-success";
+                    } else if (status === "Spam") {
+                        badgeClass = "badge-neon-danger";
+                    } else {
+                        badgeClass = "badge-neon-warning";
+                    }
+
                     const itemHTML = `
-                        <div class="p-3 mb-2" style="background: rgba(255,255,255,0.05); border-radius: 10px; border-left: 2px solid ${data.status === 'Resolved' ? '#69da8f' : '#f4d03f'};">
+                        <div class="p-3 mb-2" style="background: rgba(255,255,255,0.05); border-radius: 10px; border-left: 2px solid ${status === 'Approved' ? '#69da8f' : status === 'Spam' ? '#ff6b6b' : '#f4d03f'};">
                             <p class="mb-2 text-white" style="font-size: 0.9rem; font-style: italic;">
                                 "${data.message}"
                             </p>
                             <div class="d-flex justify-content-between align-items-center">
                                 <small class="text-white-50">${data.recipient || 'General'}</small>
-                                <span class="${badgeClass}">${data.status}</span>
+                                <span class="${badgeClass}">${status}</span>
                             </div>
                         </div>
                     `;
@@ -239,7 +251,7 @@
     // --- CHART CONFIGURATION (UPDATED) ---
     let feedbackChart = null;
 
-    function updateChart(submitted, pending, resolved) {
+    function updateChart(submitted, pendingReview, approved, spam) {
         const canvas = document.getElementById('feedbackChart');
         
         // Safety check if element exists
@@ -253,19 +265,21 @@
         feedbackChart = new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: ['Submitted', 'Pending', 'Resolved'],
+                labels: ['Total', 'Pending Review', 'Approved', 'Spam'],
                 datasets: [{
                     label: 'Count',
-                    data: [submitted, pending, resolved],
+                    data: [submitted, pendingReview, approved, spam],
                     backgroundColor: [
-                        'rgba(52, 152, 219, 0.6)', // Blue
-                        'rgba(244, 208, 63, 0.6)', // Gold
-                        'rgba(105, 218, 143, 0.6)' // Green
+                        'rgba(52, 152, 219, 0.6)', // Blue (Total)
+                        'rgba(244, 208, 63, 0.6)', // Gold (Pending)
+                        'rgba(105, 218, 143, 0.6)', // Green (Approved)
+                        'rgba(255, 107, 107, 0.6)' // Red (Spam)
                     ],
                     borderColor: [
                         '#3498db',
                         '#f4d03f',
-                        '#69da8f'
+                        '#69da8f',
+                        '#ff6b6b'
                     ],
                     borderWidth: 2,
                     borderRadius: 5,

@@ -6,7 +6,7 @@
     <link href='https://cdn.boxicons.com/3.0.3/fonts/basic/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="..\css\login.css"> 
+    <link rel="stylesheet" href="../css/login.css"> 
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
@@ -59,18 +59,37 @@
                     <input type="hidden" id="regRole" value="Student">
                 </div>
                 
+                <div class="input-box animation" style="--i:18.5;--j:1.5;">
+                    <input type="text" id="regFirstName" placeholder="" required>
+                    <label>First Name</label>
+                    <i class='bx bx-user'></i> 
+                </div>
                 <div class="input-box animation" style="--i:19;--j:2;">
+                    <input type="text" id="regLastName" placeholder="" required>
+                    <label>Last Name</label>
+                    <i class='bx bx-user'></i> 
+                </div>
+                <div class="input-box animation" style="--i:19.5;--j:2.5;">
                     <input type="email" id="regEmail" placeholder="" required>
                     <label>Email</label>
                     <i class='bx bx-envelope' id="emailIcon"></i> 
                     <button type="button" class="send-code-btn hidden" id="btnSendCode" onclick="sendVerificationCode()">
                         Send Code
                     </button></div>
-
+                
                 <div class="input-box animation" style="--i:20;--j:3;">
                     <input type="text" id="regStudentId" placeholder="" required>
                     <label id="idLabel">Student ID (22-XXXXX)</label>
                     <i class='bxr  bx-user-id-card'></i> 
+                </div>
+
+                <div class="input-box animation" id="studentInstituteBox" style="--i:20.5;--j:3.5;">
+                    <select id="regInstituteStudent" style="width: 100%; height: 100%; background: transparent; border: none; outline: none; border-bottom: 2px solid white; color: white; font-size: 14px; font-weight: 500; padding-right: 24px;">
+                        <option value="" disabled selected style="background: #021204; color: #888;">Select Institute</option>
+                        <option value="Institute of Computer Studies" style="background: #021204; color: white;">ICS</option>
+                        <option value="Institute of Business" style="background: #021204; color: white;">IBE</option>
+                        <option value="Institute of Education" style="background: #021204; color: white;">ITE</option>
+                    </select>
                 </div>
 
                 <div class="input-box animation" style="--i:21;--j:4;">
@@ -124,16 +143,17 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- EMAILJS CONFIGURATION ---
+    // --- CONFIGURATION ---
     (function(){
         // REPLACE THIS: Put your Public Key from EmailJS Account here
         emailjs.init("_rfBw_AXcyEzf55eg"); 
     })();
 
+    const SUPER_ADMIN_LOGIN_ID = "SUPER-ADMIN"; 
     const ADMIN_SECRET_KEY = "CDM-ADMIN-2025"; 
     let generatedVerificationCode = null;
 
-    // --- 1. SLIDER & ROLE UI LOGIC ---
+    // --- 1. SLIDER & ROLE UI LOGIC (UPDATED) ---
     window.setRole = function(role) {
         document.getElementById('regRole').value = role;
 
@@ -145,9 +165,12 @@
         const verifyBox = document.getElementById('verifyBox');
         const secretBox = document.getElementById('secretBox');
         const idLabel = document.getElementById('idLabel');
+        const studentInstituteBox = document.getElementById('studentInstituteBox'); // New
+
         
         const verifyInput = document.getElementById('regVerificationCode');
         const secretInput = document.getElementById('regSecretCode');
+        const regInstituteStudent = document.getElementById('regInstituteStudent'); // New
 
         if (role === 'Student') {
             // STUDENT MODE
@@ -156,23 +179,27 @@
             
             verifyBox.classList.remove('hidden');
             secretBox.classList.add('hidden');
+            studentInstituteBox.classList.remove('hidden'); // Show Institute for student
             
             verifyInput.setAttribute('required', ''); 
             secretInput.removeAttribute('required');   
+            regInstituteStudent.setAttribute('required', ''); // Required for student
             
             idLabel.innerText = "Student ID (22-XXXXX)";
         } else {
-            // FACULTY MODE
+            // FACULTY/ADMIN MODE
             btnAdmin.classList.add('active');
             btnStudent.classList.remove('active');
             
             verifyBox.classList.add('hidden');
             secretBox.classList.remove('hidden');
+            studentInstituteBox.classList.add('hidden'); // Hide Institute for faculty
             
             secretInput.setAttribute('required', '');  
-            verifyInput.removeAttribute('required');   
+            verifyInput.removeAttribute('required');
+            regInstituteStudent.removeAttribute('required'); // Not required for faculty
             
-            idLabel.innerText = "Faculty ID (FAC-XXXX)";
+            idLabel.innerText = "Faculty ID (FAC-XXXX) or Super Admin ID";
         }
     }
 
@@ -197,8 +224,8 @@
 
         // 3. Send Email via EmailJS
         const templateParams = {
-            email: email,                  // Matches {{email}} in your screenshot
-            passcode: generatedVerificationCode // Matches {{passcode}} in your screenshot
+            email: email,                  
+            passcode: generatedVerificationCode 
         };
 
         // REPLACE THESE: Use your Service ID and Template ID from EmailJS
@@ -207,7 +234,6 @@
                 // SUCCESS: Email Sent
                 Swal.fire({
                     title: 'CODE SENT!',
-                    // Notice: We do NOT show the code here anymore
                     html: `A verification code has been sent to <strong>${email}</strong>.<br>Please check your inbox or spam folder.`,
                     icon: 'success',
                     confirmButtonText: 'OK',
@@ -220,7 +246,7 @@
             });
     }
 
-    // --- 3. REGISTRATION LOGIC ---
+    // --- 3. REGISTRATION LOGIC (UPDATED) ---
     window.handleRegistrationDispatch = function() {
         const role = document.getElementById('regRole').value;
         if (role === 'Student') {
@@ -231,12 +257,18 @@
     }
 
     async function registerStudent() {
+        // New Fields
+        const firstName = document.getElementById('regFirstName').value.trim();
+        const lastName = document.getElementById('regLastName').value.trim();
+        const institute = document.getElementById('regInstituteStudent').value;
+        
+        // Existing Fields
         const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
         const enteredCode = document.getElementById('regVerificationCode').value;
 
-        if (!idNumber || !email || !password || !enteredCode) {
+        if (!firstName || !lastName || !institute || !idNumber || !email || !password || !enteredCode) {
             Swal.fire('Error', 'Please fill in all required fields.', 'error'); return;
         }
         
@@ -250,32 +282,42 @@
             Swal.fire('Error', 'Password must be at least 6 characters.', 'warning'); return;
         }
 
-        await finalizeRegistration(email, password, idNumber, 'Student');
+        await finalizeRegistration(email, password, idNumber, 'Student', firstName, lastName, institute); 
     }
 
     async function registerAdmin() {
+        // New Fields
+        const firstName = document.getElementById('regFirstName').value.trim();
+        const lastName = document.getElementById('regLastName').value.trim();
+        
+        // Existing Fields
         const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
         const secretCode = document.getElementById('regSecretCode').value;
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
 
-        if (!idNumber || !email || !password || !secretCode) {
+        if (!firstName || !lastName || !idNumber || !email || !password || !secretCode) {
             Swal.fire('Error', 'Please fill in all required fields.', 'error'); return;
         }
         if (secretCode !== ADMIN_SECRET_KEY) {
             Swal.fire('Unauthorized', 'Incorrect Secret Code.', 'error'); return;
         }
-        if (!idNumber.startsWith('FAC-')) {
-            Swal.fire('Security Error', 'Faculty ID must start with "FAC-".', 'error'); return;
+        
+        // Validation for Super Admin vs Faculty
+        if (!idNumber.startsWith('FAC-') && idNumber !== SUPER_ADMIN_LOGIN_ID) { 
+            Swal.fire('Security Error', `Admin ID must start with "FAC-" or be the Super Admin ID (${SUPER_ADMIN_LOGIN_ID}).`, 'error'); return;
         }
+
         if (password.length < 6) {
             Swal.fire('Error', 'Password must be at least 6 characters.', 'warning'); return;
         }
 
-        await finalizeRegistration(email, password, idNumber, 'Admin');
+        // Institute is null for faculty/admin in this simplified structure
+        await finalizeRegistration(email, password, idNumber, 'Admin', firstName, lastName, null);
     }
 
-    async function finalizeRegistration(email, password, idNumber, role) {
+    // FINALIZED REGISTRATION FUNCTION (UPDATED)
+    async function finalizeRegistration(email, password, idNumber, role, firstName, lastName, institute = null) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
@@ -283,7 +325,10 @@
             await setDoc(doc(db, "users", user.uid), {
                 studentId: idNumber,
                 email: email,
-                role: role
+                role: role,
+                firstName: firstName, // New
+                lastName: lastName,   // New
+                institute: institute  // Used for students, null for faculty/admin
             });
 
             Swal.fire({
@@ -292,7 +337,6 @@
                 icon: 'success',
                 confirmButtonColor: '#69da8f'
             }).then(() => {
-                // Slide back to Login screen
                 document.querySelector('.wrapper').classList.remove('active');
             });
 
@@ -304,7 +348,7 @@
         }
     }
 
-    // --- 4. LOGIN LOGIC ---
+    // --- 4. LOGIN LOGIC (UNCHANGED REDIRECT) ---
     window.handleLogin = async function() {
         const email = document.getElementById('loginEmail').value;
         const password = document.getElementById('loginPassword').value;
@@ -323,6 +367,7 @@
             if (docSnap.exists()) {
                 const userData = docSnap.data();
                 const role = userData.role;
+                const userIdentifier = userData.studentId || ""; 
 
                 const Toast = Swal.mixin({
                     toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true,
@@ -331,9 +376,14 @@
 
                 setTimeout(() => { 
                     if (role === 'Admin') {
-                        window.location.href = "admin_dashboard.html";
+                        // FIX: Explicitly check for FAC-XXXX for faculty dashboard. Everything else goes to Super Admin dashboard.
+                        if (userIdentifier.startsWith('FAC-')) {
+                            window.location.href = "faculty_dashboard.html"; // Faculty goes here
+                        } else {
+                            window.location.href = "admin_dashboard.html"; // Super Admin (or any other Admin ID) goes here
+                        }
                     } else {
-                        window.location.href = "index.html"; 
+                        window.location.href = "index.html"; // Student Dashboard
                     }
                 }, 1500);
             } else {

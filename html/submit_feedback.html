@@ -11,7 +11,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <link rel="stylesheet" href="..\css/dashboard.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
     
     <style>
         /* --- PAGE SPECIFIC OVERRIDES --- */
@@ -98,7 +98,7 @@
         
         <div class="col-md-2 sidebar d-none d-md-flex">
             <div class="logo-area">
-                <img src="..\img/logo.jpg" alt="CDM Logo" class="logo-img">
+                <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img">
             </div>
             <div class="profile-section">
                 <i class="fas fa-user-circle profile-icon"></i>
@@ -173,7 +173,7 @@
                                     <div class="col-md-8 mb-2">
                                         <div class="input-group">
                                             <span class="input-group-text custom-label-green">To:</span>
-                                            <input type="text" id="recipient" class="form-control custom-input-green" placeholder="e.g. Dean / Faculty">
+                                            <input type="text" id="recipient" class="form-control custom-input-green" placeholder="e.g. Dean / Faculty ID (FAC-XXXX)">
                                         </div>
                                     </div>
                                     <div class="col-md-4 text-end">
@@ -223,7 +223,7 @@
         }
     });
 
-    // 2. Save Function (NOW INCLUDES UID)
+    // 2. Save Function (NOW INCLUDES UID AND NEW STATUS)
     window.saveToFirebase = async function() {
         const user = auth.currentUser;
         
@@ -237,7 +237,7 @@
         const course = document.getElementById('course').value;
         const institute = document.getElementById('institute').value;
         const message = document.getElementById('feedbackMessage').value;
-        const recipient = document.getElementById('recipient').value;
+        const recipient = document.getElementById('recipient').value.toUpperCase(); // Ensure recipient is uppercase for consistent filtering
         
         const stars = document.querySelectorAll('.star-rating-inline .active').length;
 
@@ -254,7 +254,7 @@
 
         try {
             await addDoc(collection(db, "feedbacks"), {
-                uid: user.uid,  // <--- THIS IS THE CRITICAL FIX
+                uid: user.uid,
                 student_codename: codeName || "Anonymous",
                 year: year !== "Select Year Level" ? year : "N/A",
                 course: course !== "Select Course" ? course : "N/A",
@@ -262,13 +262,14 @@
                 message: message,
                 rating: stars,
                 recipient: recipient || "General",
-                status: "Pending", 
+                // 💡 NEW WORKFLOW: Initial status is Pending Review
+                status: "Pending Review", 
                 timestamp: serverTimestamp()
             });
 
             Swal.fire({
                 title: 'SUCCESS!',
-                text: 'Your feedback has been sent.',
+                text: 'Your feedback has been submitted for admin review.',
                 icon: 'success',
                 confirmButtonColor: '#69da8f',
                 background: '#021204', color: '#fff'

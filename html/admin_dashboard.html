@@ -40,6 +40,18 @@
         #feedbackScrollContainer::-webkit-scrollbar { width: 8px; }
         #feedbackScrollContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
         #feedbackScrollContainer::-webkit-scrollbar-thumb { background: #69da8f; border-radius: 4px; box-shadow: 0 0 5px #69da8f; }
+
+        /* Badge for Spam Status */
+        .badge-neon-danger {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #ff6b6b;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
     </style>
 </head>
 <body>
@@ -86,13 +98,13 @@
                     </div>
                     <div class="col-md-4">
                         <div class="stat-card">
-                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending</div>
+                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending Review</div>
                             <div class="stat-number text-warning-glow" id="adminPending">0</div>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="stat-card">
-                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Resolved</div>
+                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Approved</div>
                             <div class="stat-number text-success-glow" id="adminResolved">0</div>
                         </div>
                     </div>
@@ -110,6 +122,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
@@ -130,8 +143,39 @@
     const auth = getAuth(app);
     
     let currentInstituteFilter = 'All'; 
+    
+    // --- EMAILJS CONFIGURATION (You need to update your Service ID and Template ID) ---
+    (function(){
+        emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // ⚠️ REPLACE with your actual Public Key
+    })();
+    const EMAILJS_SERVICE_ID = 'service_qv9ifsf'; // ⚠️ REPLACE with your actual Service ID
+    const EMAILJS_TEMPLATE_ID = 'template_faculty_feedback'; // ⚠️ You need to CREATE a new EmailJS Template for faculty feedback
 
     function directRedirect(filename) { window.location.href = filename; }
+
+    // --- NEW EMAIL FUNCTION ---
+    async function sendFacultyEmail(feedbackData) {
+        // NOTE: In a real system, faculty_email should be dynamically fetched based on the recipient name (feedbackData.recipient). 
+        // For a basic copy-paste solution, you need to manually map or use a static address for testing.
+        const templateParams = {
+            to_recipient: feedbackData.recipient || "Faculty", // Use recipient field for faculty name
+            faculty_email: "faculty_member@cdm.edu", // ⚠️ REPLACE with the actual faculty email or fetch it from a database
+            student_info: feedbackData.student_codename,
+            feedback_message: feedbackData.message,
+            institute: feedbackData.institute,
+            course: feedbackData.course
+        };
+
+        try {
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+            console.log("SUCCESS! Feedback email sent to faculty.");
+            return true;
+        } catch (error) {
+            console.error("FAILED to send email to faculty:", error);
+            Swal.fire('Email Error', 'Failed to send notification email to faculty member. Check console for details.', 'error');
+            return false;
+        }
+    }
 
     function setupRealTimeListener(instituteFilter) {
         let q;
@@ -154,7 +198,7 @@
         onSnapshot(q, (snapshot) => {
             const container = document.getElementById('adminFeedbackList');
             container.innerHTML = ""; 
-            let total = 0, pending = 0, resolved = 0;
+            let total = 0, pending = 0, approved = 0, spam = 0;
 
             if (snapshot.empty) {
                 container.innerHTML = '<div class="text-center text-white mt-5">No feedback found.</div>';
@@ -163,20 +207,31 @@
             snapshot.forEach((docSnap) => {
                 const data = docSnap.data();
                 const id = docSnap.id;
+                const status = data.status || 'Pending Review'; // Default to Pending Review
+
                 total++;
-                if(data.status === 'Resolved') resolved++; else pending++;
+                if(status === 'Approved') approved++; 
+                else if (status === 'Pending Review') pending++; 
+                else if (status === 'Spam') spam++;
 
                 let dateStr = "Recently";
                 if(data.timestamp) dateStr = new Date(data.timestamp.seconds * 1000).toLocaleDateString();
 
-                const isResolved = data.status === 'Resolved';
-                const statusBadge = isResolved 
-                    ? '<span class="badge-neon-success">Resolved</span>' 
-                    : '<span class="badge-neon-warning">Pending</span>';
-
-                const actionButton = isResolved
-                    ? `<button class="btn btn-sm btn-outline-neon-warning" onclick="window.adminToggleStatus('${id}', 'Resolved')"><i class="fas fa-undo"></i> Undo</button>`
-                    : `<button class="btn btn-sm btn-outline-neon-success" onclick="window.adminToggleStatus('${id}', 'Pending')"><i class="fas fa-check"></i> Resolve</button>`;
+                let statusBadge, actionButton;
+                
+                if (status === 'Approved') {
+                    statusBadge = '<span class="badge-neon-success">Approved</span>';
+                    actionButton = `<button class="btn btn-sm btn-outline-neon-warning" onclick="window.adminMarkSpam('${id}')"><i class="fas fa-redo"></i> Mark Spam</button>`;
+                } else if (status === 'Spam') {
+                    statusBadge = '<span class="badge-neon-danger">Spam</span>';
+                    actionButton = `<button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApprovedAndSend('${id}', '${data.recipient}', \`${data.message.replace(/`/g, '\\`')}\`, '${data.institute}', '${data.course}', '${data.student_codename}')"><i class="fas fa-check"></i> Mark Valid & Send</button>`;
+                } else { // Pending Review
+                    statusBadge = '<span class="badge-neon-warning">Pending Review</span>';
+                    actionButton = `
+                        <button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApprovedAndSend('${id}', '${data.recipient}', \`${data.message.replace(/`/g, '\\`')}\`, '${data.institute}', '${data.course}', '${data.student_codename}')"><i class="fas fa-check"></i> Mark Valid & Send</button>
+                        <button class="btn btn-sm btn-outline-neon-danger" onclick="window.adminMarkSpam('${id}')"><i class="fas fa-trash-alt"></i> Mark Spam</button>
+                    `;
+                }
 
                 const cardHTML = `
                     <div class="col-12 mb-3">
@@ -196,7 +251,7 @@
                                         Institute: <strong class="text-white">${data.institute || 'General'}</strong> | To: <strong class="text-white">${data.recipient || 'N/A'}</strong>
                                     </div>
                                     <p class="message-box">"${data.message}"</p>
-                                    ${data.adminReply ? `<div class="reply-box"><i class="fas fa-reply me-2"></i><strong>You:</strong> ${data.adminReply}</div>` : ''}
+                                    ${data.adminReply ? `<div class="reply-box"><i class="fas fa-reply me-2"></i><strong>Admin Reply:</strong> ${data.adminReply}</div>` : ''}
                                     <div class="d-flex align-items-center gap-2 mt-3">
                                         ${statusBadge}
                                         ${actionButton}
@@ -213,7 +268,7 @@
             if (instituteFilter === 'All') {
                 document.getElementById('adminTotal').innerText = total;
                 document.getElementById('adminPending').innerText = pending;
-                document.getElementById('adminResolved').innerText = resolved;
+                document.getElementById('adminResolved').innerText = approved; // Approved is the "resolved" state
             }
         }, (error) => {
             console.error("Error fetching data:", error);
@@ -241,10 +296,31 @@
         } else { directRedirect("login-register.html"); }
     });
 
-    window.adminToggleStatus = async function(id, currentStatus) {
-        const newStatus = currentStatus === "Resolved" ? "Pending" : "Resolved";
-        await updateDoc(doc(db, "feedbacks", id), { status: newStatus });
+    window.adminMarkSpam = async function(id) {
+        await updateDoc(doc(db, "feedbacks", id), { status: "Spam" });
+        Swal.fire({ title: 'Marked as Spam', icon: 'info', background: '#021204', color: '#fff', timer: 1500, showConfirmButton: false });
     }
+
+    window.adminMarkApprovedAndSend = async function(id, recipient, message, institute, course, studentCodename) {
+        const feedbackData = { recipient, message, institute, course, student_codename: studentCodename || 'Anonymous' };
+        
+        // 1. Send Email Notification
+        const emailSent = await sendFacultyEmail(feedbackData);
+
+        if (emailSent) {
+            // 2. Update Status if Email was successful
+            await updateDoc(doc(db, "feedbacks", id), { status: "Approved" });
+            Swal.fire({ 
+                title: 'APPROVED & SENT!', 
+                text: `Feedback forwarded to ${recipient}. Status updated to Approved.`, 
+                icon: 'success', 
+                background: '#021204', 
+                color: '#fff', 
+                confirmButtonColor: '#69da8f'
+            });
+        }
+    }
+    
     window.adminReply = async function(id) {
         const { value: text } = await Swal.fire({
             title: 'Reply to Student',
