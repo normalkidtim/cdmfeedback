@@ -1,0 +1,454 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(30deg, rgba(0, 0, 0, 1) 0%,
+    rgba(2, 18, 4, 1) 24%, rgba(9, 31, 9, 1) 62%, 
+    rgba(8, 28, 8, 1) 76%, rgba(5, 23, 4, 1) 91%, rgba(4, 18, 7, 1) 100%);
+}
+
+.wrapper {
+    position: relative;
+    width: 800px; /* Increased Width slightly */
+    height: 600px; /* INCREASED HEIGHT to fit the Register form */
+    background: transparent;
+    border: 4px solid #69da8f;
+    box-shadow: 0 0 25px #69da8f;
+    margin: 20px;
+    overflow: hidden;
+}
+
+/* --- LOGIC VISIBILITY CLASSES --- */
+.input-box.hidden {
+    display: none;
+}
+
+.wrapper .form-box {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.wrapper .form-box.login {
+    left: 0;
+    padding: 0 60px 0 40px;
+}
+
+/* ... Animation Styles remain the same ... */
+.wrapper .form-box.login .animation {
+    transform:translateX(0);
+    opacity: 1;
+    filter:blur(0);
+    transition: .7s ease;
+    transition-delay: calc(.1s*var(--j));
+}
+.wrapper.active .form-box.login .animation {
+    transform:translateX(-120%);
+    opacity: 0;
+    filter: blur(10px);
+    transition-delay: calc(.1s*var(--i));
+}
+
+.wrapper .form-box.register {
+    right: 0;
+    padding: 0 40px 0 60px;
+    pointer-events: none; /* Disables clicking when hidden */
+}
+
+.wrapper.active .form-box.register {
+    pointer-events: auto; /* Enables clicking when active */
+}
+
+.wrapper .form-box.register .animation {
+    transform: translateX(120%);
+    transition: .7s ease;
+    opacity: 0;
+    filter: blur(10px);
+    transition-delay: calc(.1s*var(--j));
+}
+.wrapper.active .form-box.register .animation {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(.1s*var(--i));
+}
+
+.form-box h2 {
+    font-size: 32px;
+    color: white;
+    text-align: center;
+}
+
+.form-box .input-box {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    margin: 25px 0; /* Default margin for Login */
+}
+
+/* COMPACT MODE FOR REGISTER FORM TO PREVENT CROWDING */
+.form-box.register .input-box {
+    margin: 10px 0; /* Reduced margin specifically for register inputs */
+    height: 45px;
+}
+
+.input-box input {
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 2px solid white;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    padding-right: 24px;
+}
+
+.input-box input:focus, .input-box input:valid {
+    border-bottom-color: #69da8f;
+}
+
+.input-box label {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: white;
+    pointer-events: none;
+    transition: .5s;
+}
+
+.input-box input:focus ~ label,
+.input-box input:valid ~ label,
+.input-box input:not(:placeholder-shown) ~ label {
+    top: 0px;
+    color: #69da8f;
+}
+
+.input-box i {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: white;
+    transition: .5s;
+}
+
+.btn {
+    position: relative;
+    width: 100%;
+    height: 45px;
+    background: transparent;
+    border: 2px solid #69da8f;
+    outline: none;
+    border-radius: 40px;
+    cursor: pointer;
+    font-size: 16px;
+    color: white;
+    font-weight: 600;
+    z-index: 1;
+    overflow: hidden;
+    margin-top: 15px; /* Add space above button */
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 300%;
+    background: linear-gradient(#021204, #69da8f, #021204, #69da8f);
+    z-index: -1;
+    transition: .5s;
+}
+.btn:hover::before { top: 0; }
+
+.form-box .logreg-link {
+    font-size: 14px;
+    color: white;
+    text-align: center;
+    margin: 20px 0 10px;
+}
+.logreg-link a { color: #69da8f; text-decoration: none; font-weight: 600; }
+.logreg-link a:hover { text-decoration: underline; }
+
+/* --- INFO TEXT STYLES --- */
+.wrapper .info-text {
+    position: absolute;
+    top: 0;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.wrapper .info-text.login {
+    right: 0;
+    text-align: right;
+    padding: 0 40px 60px 150px;
+}
+.wrapper .info-text.login .animation {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    transition: .7s ease;
+    transition-delay: calc(.1s*var(--j));
+}
+.wrapper.active .info-text.login .animation {
+    transform: translateX(130%);
+    opacity: 1;
+    filter: blur(10px);
+    transition-delay: calc(.1s*var(--i));
+}
+.wrapper .info-text.register {
+    left: 0;
+    text-align: left;
+    padding: 0 150px 60px 40px;
+    pointer-events: none;
+}
+.wrapper .info-text.register .animation {
+    transform: translateX(-130%);
+    opacity: 0;
+    filter: blur(10px);
+    transition: .7s ease;
+    transition-delay: calc(.1s*var(--j));
+}
+.wrapper.active .info-text.register .animation {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+    transition-delay: calc(.1s*var(--i));
+}
+
+.info-text h2 {
+    font-size: 36px;
+    color: white;
+    line-height: 1.2;
+    text-transform: uppercase;
+    text-shadow: 0 0 26px #021204;
+}
+.info-text p {
+    color: white;
+    
+}
+/* --- BACKGROUND ANIMATION SHAPES --- */
+.wrapper .bg-animate {
+    position: absolute;
+    top: -4px;
+    right: 0;
+    width: 850px;
+    height: 700px; /* Increased to match wrapper */
+    background: linear-gradient(45deg, #021204, #69da8f);
+    border-bottom: 4px solid #69da8f;
+    transform: rotate(10deg) skewY(40deg);
+    transform-origin: bottom right;
+    transition: .5s ease;
+    transition-delay: 1s;
+}
+.wrapper.active .bg-animate {
+    transform: rotate(0deg) skewY(0deg);
+    transition-delay: .5s;
+}
+.wrapper .bg-animate2 {
+    position: absolute;
+    top: 100%;
+    left: 250px;
+    width: 850px;
+    height: 800px; /* Increased to match wrapper */
+    background: #091F09;
+    border-top: 4px solid #69da8f;
+    transform: rotate(0deg) skewY(0deg);
+    transform-origin: bottom left;
+    transition: .5s ease;
+    transition-delay: .5s;
+}
+.wrapper.active .bg-animate2 {
+    transform: rotate(-12.5deg) skewY(-41deg);
+    transition-delay: 1s;
+}
+
+/* --- ROLE TABS STYLING --- */
+.role-switch-container {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    padding: 4px;
+    display: flex;
+    margin-bottom: 15px;
+    position: relative;
+    border: 1px solid #69da8f;
+}
+
+.role-tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px;
+    border-radius: 50px;
+    font-weight: 600;
+    color: #ccc;
+    transition: 0.3s;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.role-tab-btn.active {
+    background-color: #69da8f;
+    color: #021204;
+    box-shadow: 0 0 10px #69da8f;
+}
+/* Style for the Send Code Button inside the input */
+.send-code-btn {
+    position: absolute;
+    top: 50%;
+    right: 0; /* Align to the right edge */
+    transform: translateY(-50%);
+    background: transparent;
+    border: 1px solid #69da8f;
+    color: #69da8f;
+    font-size: 10px; /* Small text to fit */
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+    z-index: 10;
+}
+
+.send-code-btn:hover {
+    background: #69da8f;
+    color: #000;
+    box-shadow: 0 0 10px #69da8f;
+}
+
+/* Ensure the text doesn't type over the button */
+.input-box input {
+    padding-right: 80px; /* Make space for the button */
+}
+
+/* Utility to hide elements (if you don't have it already) */
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================================
+   RESPONSIVE DESIGN (Max-Width: 800px)
+========================================= */
+/* =========================================
+   RESPONSIVE DESIGN (Max-Width: 800px)
+========================================= */
+
+@media (max-width: 800px) {
+    
+    /* 1. RESET THE WRAPPER LAYOUT */
+    .wrapper {
+        width: 90%;
+        max-width: 400px;     /* Keep it slim on mobile */
+        height: auto;         /* Allow height to grow */
+        min-height: 600px;
+        margin: 20px auto;
+        display: flex;
+        flex-direction: column; /* Stack items vertically */
+        padding: 20px 30px;
+        
+        /* Static background for mobile */
+        background: linear-gradient(#091f09, #000000); 
+    }
+
+    /* 2. HIDE BACKGROUND SHAPES */
+    .bg-animate, .bg-animate2 {
+        display: none !important;
+    }
+
+    /* 3. RESET BOX POSITIONS (Crucial Fix) */
+    .form-box, .info-text {
+        position: relative !important; /* Stop floating */
+        width: 100% !important;        /* Take full width */
+        height: auto !important;
+        padding: 0 !important;
+        transform: none !important;    /* Kill animations */
+        transition: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        pointer-events: auto !important;
+        top: auto; left: auto; right: auto; bottom: auto;
+    }
+
+    /* --- LOGIN VIEW --- */
+    /* Put "CDM FEEDBACK" at the TOP using 'order' */
+    .info-text.login {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        order: 1;             /* 1 comes before 2 */
+        margin-bottom: 20px;  /* Space below logo */
+    }
+
+    .form-box.login {
+        display: block !important;
+        order: 2;             /* Form goes below text */
+    }
+
+    /* Hide Register parts when logging in */
+    .form-box.register, .info-text.register {
+        display: none !important;
+    }
+
+    /* --- REGISTER VIEW (Active State) --- */
+    .wrapper.active .form-box.login, 
+    .wrapper.active .info-text.login {
+        display: none !important;
+    }
+
+    .wrapper.active .info-text.register {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        order: 1; /* Text on top */
+        margin-bottom: 10px;
+    }
+
+    .wrapper.active .form-box.register {
+        display: block !important;
+        order: 2; /* Form below */
+    }
+
+    /* --- TEXT & INPUT ADJUSTMENTS --- */
+    .info-text h2 {
+        font-size: 28px; /* Slightly smaller for mobile */
+        width: 100%;
+        justify-content: center; /* Center flex content */
+    }
+
+    .info-text p {
+        font-size: 14px;
+        justify-content: center;
+    }
+    
+    /* Fix input spacing */
+    .input-box {
+        margin: 15px 0;
+    }
+}

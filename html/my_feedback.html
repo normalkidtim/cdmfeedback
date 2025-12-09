@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDM - My Feedback</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="..\css/dashboard.css">
+    
+    <style>
+        /* --- PAGE SPECIFIC LAYOUT FIXES --- */
+        
+        /* Lock body height to prevent window scrolling */
+        body, html {
+            height: 100%;
+            overflow: hidden; 
+        }
+
+        .container-fluid, .row {
+            height: 100%;
+        }
+
+        .main-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-body {
+            flex: 1; /* Fills remaining space */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding-bottom: 20px;
+        }
+
+        /* The Feedback List Container */
+        #feedbackScrollContainer {
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 10px;
+            padding-right: 15px; 
+        }
+
+        /* Scrollbar Styling */
+        #feedbackScrollContainer::-webkit-scrollbar { width: 8px; }
+        #feedbackScrollContainer::-webkit-scrollbar-thumb { background: #69da8f; border-radius: 10px; box-shadow: 0 0 5px #69da8f; }
+        #feedbackScrollContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
+
+        /* Feedback Card Styles */
+        .feedback-display-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(105, 218, 143, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            height: 100%;
+            position: relative;
+            transition: 0.3s;
+        }
+        .feedback-display-card:hover {
+            border-color: #69da8f;
+            box-shadow: 0 0 20px rgba(105, 218, 143, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Text & Icons */
+        .profile-icon-small { font-size: 40px; color: #69da8f; margin-bottom: 10px; filter: drop-shadow(0 0 5px #69da8f); }
+        .student-id { color: white; font-weight: 700; letter-spacing: 1px; font-size: 1.1rem; }
+        .card-divider { border-top: 1px solid rgba(105, 218, 143, 0.3); margin: 15px auto; width: 100%; }
+        .feedback-body-text { color: rgba(255, 255, 255, 0.8); font-style: italic; text-align: center; margin-bottom: 15px; }
+
+        /* Delete Button */
+        .btn-delete-custom {
+            background: transparent; border: 1px solid #ff6b6b; color: #ff6b6b;
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; transition: 0.3s;
+        }
+        .btn-delete-custom:hover { background: #ff6b6b; color: white; box-shadow: 0 0 10px #ff6b6b; }
+
+        /* Badges */
+        .badge-neon-success { background: rgba(105, 218, 143, 0.1); border: 1px solid #69da8f; color: #69da8f; box-shadow: 0 0 10px rgba(105, 218, 143, 0.2); }
+        .badge-neon-warning { background: rgba(244, 208, 63, 0.1); border: 1px solid #f4d03f; color: #f4d03f; box-shadow: 0 0 10px rgba(244, 208, 63, 0.2); }
+
+        /* Date Header */
+        .date-header {
+            color: #69da8f;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(105, 218, 143, 0.3);
+            padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        /* --- UPDATED REPLY BOX STYLE --- */
+        .faculty-reply-box {
+            margin-top: 15px;
+            padding: 12px 15px;
+            background-color: rgba(105, 218, 143, 0.15); /* Semi-transparent neon green */
+            border: 1px solid #69da8f; /* Neon border */
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: #fff; /* White text */
+            text-align: left;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .faculty-reply-box strong {
+            font-weight: 800;
+            color: #69da8f; /* Green label */
+            text-transform: uppercase;
+        }
+        .faculty-reply-box i {
+            color: #69da8f;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        
+        <div class="col-md-2 sidebar d-none d-md-flex">
+            <div class="logo-area">
+                <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img">
+            </div>
+            <div class="profile-section">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <h3 id="sidebarStudentId">Loading...</h3>
+                <span style="color: #aaa; font-size: 0.8rem;">Student Portal</span>
+            </div>
+            <a href="#" class="logout-btn" onclick="confirmLogout()">
+                LOG OUT <i class="fas fa-sign-out-alt ms-2"></i>
+            </a>
+        </div>
+
+        <div class="col-md-10 main-content">
+            
+            <div class="top-nav-bar d-flex justify-content-center align-items-center">
+                <div class="nav-pills-custom">
+                    <a href="index.html" class="btn">Dashboard</a>
+                    <a href="submit_feedback.html" class="btn">Submit Feedback</a>
+                    <a href="my_feedback.html" class="btn active-link">My Feedback</a>
+                </div>
+            </div>
+
+            <div class="dashboard-body">
+                <div class="text-center mb-4">
+                    <h1 class="neon-text" style="font-size: 2.5rem;">MY FEEDBACK</h1>
+                    <p class="text-white-50" style="letter-spacing: 1px;">Track the status of your submissions.</p>
+                </div>
+
+                <div id="feedbackScrollContainer">
+                    <div id="feedbackList">
+                        <div class="text-center text-white-50 mt-5">Loading your history...</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, deleteDoc, doc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCImQfezmlDpQPV_-gKFykIhcASJxv2RdY",
+      authDomain: "cdm-feedback.firebaseapp.com",
+      projectId: "cdm-feedback",
+      storageBucket: "cdm-feedback.firebasestorage.app",
+      messagingSenderId: "219362528866",
+      appId: "1:219362528866:web:207d114926d4dddb6e4b3b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // 1. Sidebar Info
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                document.getElementById("sidebarStudentId").innerText = docSnap.data().studentId;
+            }
+
+            // 2. Query Data
+            const q = query(
+                collection(db, "feedbacks"), 
+                where("uid", "==", user.uid), 
+                orderBy("timestamp", "desc")
+            );
+            
+            // 3. Listen for Data
+            onSnapshot(q, (snapshot) => {
+                const container = document.getElementById('feedbackList');
+                container.innerHTML = ""; 
+                
+                if (snapshot.empty) {
+                    container.innerHTML = `
+                        <div class="text-center mt-5">
+                            <i class="fas fa-folder-open text-white-50" style="font-size: 60px; margin-bottom: 20px;"></i>
+                            <h3 class="text-white" style="letter-spacing: 2px; font-weight: 700;">NO HISTORY</h3>
+                            <p class="text-white-50">You haven't submitted any feedback yet.</p>
+                        </div>`;
+                    return;
+                }
+
+                // --- DATE GROUPING LOGIC ---
+                const formatDate = (timestamp) => {
+                    if(!timestamp) return "Unsorted";
+                    const date = new Date(timestamp.seconds * 1000);
+                    return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                };
+
+                let currentHeader = "";
+                let currentRowHTML = "";
+                let hasOpenRow = false;
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const id = docSnap.id;
+                    const dateString = formatDate(data.timestamp);
+
+                    if (dateString !== currentHeader) {
+                        if (hasOpenRow) {
+                            container.innerHTML += `<div class="row">${currentRowHTML}</div>`;
+                            currentRowHTML = ""; 
+                        }
+                        container.innerHTML += `<h4 class="date-header">${dateString}</h4>`;
+                        currentHeader = dateString;
+                        hasOpenRow = true;
+                    }
+
+                    const isResolved = data.status === "Resolved";
+                    const badgeClass = isResolved ? "badge-neon-success" : "badge-neon-warning";
+                    
+                    // --- Updated Reply HTML Structure ---
+                    const replyHtml = data.adminReply 
+                    ? `<div class="faculty-reply-box">
+                        <i class="fas fa-reply"></i>
+                        <div>
+                            <strong>Reply:</strong> ${data.adminReply}
+                        </div>
+                       </div>`
+                    : '';
+
+                    const cardHTML = `
+                        <div class="col-md-6 mb-4">
+                            <div class="feedback-display-card">
+                                <div class="text-center position-relative">
+                                    <i class="fas fa-user profile-icon-small"></i>
+                                    <div class="student-id">${data.student_codename}</div>
+                                    <div class="position-absolute top-0 end-0">
+                                        <button class="btn-delete-custom" onclick="window.deleteFeedback('${id}')" title="Delete">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-divider"></div>
+                                <p class="feedback-body-text">"${data.message}"</p>
+                                
+                                <div class="text-center mb-3" style="color:#f4d03f; text-shadow: 0 0 10px #f4d03f;">
+                                     ${'<i class="fas fa-star"></i>'.repeat(data.rating || 0)}
+                                </div>
+                                
+                                <div class="text-center">
+                                    <span class="badge ${badgeClass} p-2 px-3 rounded-pill">${data.status}</span>
+                                </div>
+                                
+                                ${replyHtml}
+                            </div>
+                        </div>
+                    `;
+                    currentRowHTML += cardHTML;
+                });
+
+                if (hasOpenRow) {
+                    container.innerHTML += `<div class="row">${currentRowHTML}</div>`;
+                }
+
+            }, (error) => {
+                console.error("Data Error:", error);
+                const container = document.getElementById('feedbackList');
+                
+                if(error.message.includes("requires an index")) {
+                    container.innerHTML = `
+                        <div class="text-center mt-5">
+                            <i class="fas fa-exclamation-triangle text-warning" style="font-size: 50px; margin-bottom: 20px;"></i>
+                            <h3 class="text-white">Setup Required</h3>
+                            <p class="text-white-50">This feature requires a Database Index.</p>
+                            <p class="text-warning small">Open your browser console (F12) and click the link in the error message.</p>
+                        </div>`;
+                } else {
+                    container.innerHTML = `<div class="text-center text-danger mt-5"><h3>Error: ${error.message}</h3></div>`;
+                }
+            });
+
+        } else { 
+            window.location.href = "login-register.html"; 
+        }
+    });
+
+    window.deleteFeedback = async function(id) {
+        Swal.fire({
+            title: 'Delete?', icon: 'warning', showCancelButton: true,
+            confirmButtonColor: '#d33', cancelButtonColor: '#69da8f', confirmButtonText: 'Yes', background: '#021204', color: '#fff'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await deleteDoc(doc(db, "feedbacks", id));
+                Swal.fire({ title: 'Deleted!', icon: 'success', background: '#021204', color: '#fff', confirmButtonColor: '#69da8f' });
+            }
+        })
+    }
+    
+    window.confirmLogout = function() {
+        Swal.fire({
+            title: 'Logout?', icon: 'question', showCancelButton: true,
+            confirmButtonText: 'Logout', cancelButtonText: 'Cancel', confirmButtonColor: '#69da8f', cancelButtonColor: '#d33', background: '#021204', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                signOut(auth).then(() => window.location.href = "login-register.html");
+            }
+        });
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,374 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* --- DARK NEON THEME VARIABLES --- */
+:root {
+    --neon-green: #69da8f;
+    --dark-green: #021204;
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: 1px solid rgba(105, 218, 143, 0.3);
+    --text-glow: 0 0 10px rgba(105, 218, 143, 0.5);
+    --poppins: 'Poppins', sans-serif;
+}
+
+/* --- 1. GLOBAL LAYOUT LOCK (Fixes the scrolling issue) --- */
+html, body {
+    height: 100%;           /* Force full height */
+    overflow: hidden;       /* Disable the main browser scrollbar */
+    margin: 0;
+    font-family: var(--poppins);
+    background: linear-gradient(30deg, rgba(0, 0, 0, 1) 0%,
+    rgba(2, 18, 4, 1) 24%, rgba(9, 31, 9, 1) 62%, 
+    rgba(8, 28, 8, 1) 76%, rgba(5, 23, 4, 1) 91%, rgba(4, 18, 7, 1) 100%);
+    color: white;
+}
+
+/* --- SIDEBAR (FULL HEIGHT & FIXED) --- */
+.sidebar {
+    height: 100vh;          /* Exact height of the screen */
+    overflow-y: auto;       /* Allow sidebar to scroll internally if screen is tiny */
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid var(--neon-green);
+    padding: 30px 15px;
+    box-shadow: 5px 0 15px rgba(105, 218, 143, 0.1);
+    
+    /* Flexbox for Vertical Layout */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Hide Sidebar Scrollbar */
+.sidebar::-webkit-scrollbar { display: none; }
+
+/* Logo Centering */
+.logo-area {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.logo-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--neon-green);
+    box-shadow: 0 0 15px var(--neon-green);
+    padding: 2px;
+    object-fit: cover;
+}
+
+/* Profile Section */
+.profile-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.profile-section h3 {
+    color: white;
+    font-weight: 800;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px var(--neon-green);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.profile-icon {
+    font-size: 50px;
+    color: var(--neon-green);
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 5px var(--neon-green));
+}
+
+#facultyEmailDisplay {
+    color: #ccc;
+    font-size: 0.70rem;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+    word-break: break-all;
+    max-width: 100%;
+    padding: 0 5px;
+}
+
+/* --- SIDEBAR FILTERS --- */
+.sidebar .d-flex.flex-column.gap-3.w-75.mx-auto {
+    width: 100% !important;
+    align-items: center;
+}
+
+.sidebar-header {
+    color: var(--neon-green);
+    font-weight: 700;
+    letter-spacing: 2px;
+    border-bottom: 1px solid var(--neon-green);
+    padding-bottom: 5px;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.filter-btn-sidebar {
+    width: 90%;
+    margin: 5px 0;
+    background: transparent;
+    border: 1px solid var(--neon-green);
+    color: white;
+    padding: 10px;
+    border-radius: 30px;
+    transition: 0.3s;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.filter-btn-sidebar:hover {
+    background: rgba(105, 218, 143, 0.2);
+    box-shadow: 0 0 10px var(--neon-green);
+    transform: translateX(5px);
+}
+
+.filter-btn-sidebar.active {
+    background: var(--neon-green);
+    color: black;
+    box-shadow: 0 0 15px var(--neon-green);
+    font-weight: 800;
+}
+
+/* --- LOGOUT BUTTON (FIXED AT BOTTOM) --- */
+.logout-btn {
+    margin-top: auto;       /* Push to bottom of sidebar */
+    margin-bottom: 10px;    /* Small space from edge */
+    width: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    
+    color: #ff6b6b;
+    text-decoration: none;
+    font-weight: 700;
+    border: 1px solid #ff6b6b;
+    padding: 12px 0;
+    border-radius: 30px;
+    transition: 0.3s;
+    letter-spacing: 1px;
+}
+
+.logout-btn:hover {
+    background: #ff6b6b;
+    color: black;
+    box-shadow: 0 0 15px #ff6b6b;
+}
+
+/* --- MAIN CONTENT SCROLLING --- */
+.main-content {
+    background: transparent;
+    height: 100vh;          /* Fill the screen */
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-body {
+    flex: 1;                /* Take remaining space */
+    overflow-y: auto;       /* ONLY THIS PART SCROLLS */
+    padding: 30px;
+    padding-bottom: 30px;   /* Extra space for scroll comfort */
+}
+
+/* Custom Scrollbar for Main Content */
+.dashboard-body::-webkit-scrollbar { width: 8px; }
+.dashboard-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+.dashboard-body::-webkit-scrollbar-thumb { background: #69da8f; border-radius: 4px; }
+
+/* --- TOP HEADER --- */
+.top-nav-bar {
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid var(--neon-green);
+    padding: 20px;
+    text-align: center;
+    backdrop-filter: blur(5px);
+    position: relative; /* Anchor for centered text */
+}
+
+.neon-text {
+    color: white;
+    font-weight: 800;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--neon-green);
+    letter-spacing: 2px;
+}
+
+/* --- NAVIGATION PILLS (GLOWING STYLE) --- */
+.nav-pills-custom {
+    position: relative;
+    z-index: 99;
+    background: rgba(0, 0, 0, 0.4) !important; 
+    border: 2px solid #69da8f !important;
+    box-shadow: 0 0 10px #69da8f, inset 0 0 10px rgba(105, 218, 143, 0.1) !important;
+    border-radius: 50px;
+    padding: 6px !important; 
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 0 !important;
+}
+
+.nav-pills-custom .btn {
+    color: white !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50px; 
+    padding: 8px 24px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.nav-pills-custom .btn:hover {
+    color: #69da8f !important;
+    text-shadow: 0 0 8px #69da8f;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+.nav-pills-custom .btn.active-link {
+    background-color: #69da8f !important;
+    color: #000 !important;
+    font-weight: 800;
+    box-shadow: 0 0 15px rgba(105, 218, 143, 0.8) !important;
+}
+
+.header-center-nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+/* --- STAT CARDS --- */
+.stat-card {
+    background: var(--glass-bg);
+    border: var(--glass-border);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    transition: 0.3s;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    height: 100%; 
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0 20px rgba(105, 218, 143, 0.2);
+    border-color: var(--neon-green);
+}
+
+.card-header-custom {
+    color: #ccc;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.card-header-custom i { margin-right: 8px; color: var(--neon-green); }
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 0 10px rgba(255,255,255,0.3);
+}
+
+.text-warning-glow { color: #f4d03f; text-shadow: 0 0 10px #f4d03f; }
+.text-success-glow { color: var(--neon-green); text-shadow: 0 0 10px var(--neon-green); }
+
+/* --- FEEDBACK CARDS & BUTTONS --- */
+#feedbackScrollContainer { padding-right: 15px; margin-bottom: 20px; }
+.col-12.mb-3 { margin-bottom: 25px !important; }
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.03); 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    transition: 0.3s;
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--neon-green);
+}
+
+.neon-border-circle {
+    border: 2px solid var(--neon-green);
+    background: rgba(0,0,0,0.5);
+    box-shadow: 0 0 5px var(--neon-green);
+}
+
+.text-neon { color: var(--neon-green); }
+
+.message-box {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 3px solid var(--neon-green);
+    font-style: italic;
+    color: #e0e0e0;
+}
+
+.reply-box {
+    background: rgba(105, 218, 143, 0.1);
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 10px;
+    font-size: 0.9rem;
+}
+
+.badge-neon-success {
+    background: rgba(105, 218, 143, 0.2);
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-neon-warning {
+    background: rgba(244, 208, 63, 0.2);
+    border: 1px solid #f4d03f;
+    color: #f4d03f;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.btn-outline-neon-success { border-color: var(--neon-green); color: var(--neon-green); }
+.btn-outline-neon-success:hover { background: var(--neon-green); color: black; box-shadow: 0 0 10px var(--neon-green); }
+
+.btn-outline-neon-primary { border-color: #3498db; color: #3498db; }
+.btn-outline-neon-primary:hover { background: #3498db; color: white; box-shadow: 0 0 10px #3498db; }
+
+.btn-outline-neon-danger { border-color: #ff6b6b; color: #ff6b6b; }
+.btn-outline-neon-danger:hover { background: #ff6b6b; color: white; box-shadow: 0 0 10px #ff6b6b; }
+
+.btn-outline-neon-warning { border-color: #f4d03f; color: #f4d03f; }
+.btn-outline-neon-warning:hover { background: #f4d03f; color: black; box-shadow: 0 0 10px #f4d03f; }
+
+.swal-input-dark {
+    color: white !important;
+    border: 1px solid var(--neon-green) !important;
+    background: #111 !important;
+}

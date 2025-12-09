@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://cdn.boxicons.com/3.0.3/fonts/basic/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="..\css\login.css"> 
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    <title>CDM Feedback</title>
+</head>
+<body class="login-page-body">
+
+     <div class="wrapper">
+        <span class="bg-animate"></span>
+        <span class="bg-animate2"></span>
+        
+        <div class="form-box login">
+            <h2 class="animation" style="--i:0;--j:21;">Login</h2>
+            <form action="#">
+                <div class="input-box animation" style="--i:1;--j:22;">
+                    <input type="email" id="loginEmail" placeholder="" required>
+                    <label>Email</label>
+                    <i class='bxr  bx-envelope-open'></i> 
+                </div>
+                <div class="input-box animation" style="--i:2;--j:23;">
+                    <input type="password" id="loginPassword" placeholder="" required>
+                    <label>Password</label>
+                    <i class='bx bx-lock'></i> 
+                </div>
+                <button type="button" class="btn animation" onclick="handleLogin()" style="--i:3;--j:24;">Login</button>
+                <div class="logreg-link animation" style="--i:4;--j:25;">
+                    <p><a href="forgotpassword.html" class="forget-link">Forget Password?</a></p>
+                    <p>Don't have an account? <a href="#" class="register-link" id="registerBtn"> ➡ Sign Up</a></p>
+                </div>
+            </form>
+        </div>
+        
+        <div class="info-text login">
+    <h2 class="animation" style="--i:0;--j:20;">CDM Feedback</h2>
+    <p class="animation" style="--i:1;--j:21;"> 
+        <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img" style="width:180px"> 
+    </p>    
+</div>
+
+        <div class="form-box register">
+            <h2 class="animation" style="--i:17;--j:0;">Sign Up</h2>
+            
+            <form action="#" onsubmit="return false;">
+                
+                <div class="role-switch-container animation" style="--i:18;--j:1;">
+                    <button type="button" class="role-tab-btn active" id="btn-student" onclick="setRole('Student')">Student</button>
+                    <button type="button" class="role-tab-btn" id="btn-admin" onclick="setRole('Admin')">Faculty</button>
+                    <input type="hidden" id="regRole" value="Student">
+                </div>
+                
+                <div class="input-box animation" style="--i:19;--j:2;">
+                    <input type="email" id="regEmail" placeholder="" required>
+                    <label>Email</label>
+                    <i class='bx bx-envelope' id="emailIcon"></i> 
+                    <button type="button" class="send-code-btn hidden" id="btnSendCode" onclick="sendVerificationCode()">
+                        Send Code
+                    </button></div>
+
+                <div class="input-box animation" style="--i:20;--j:3;">
+                    <input type="text" id="regStudentId" placeholder="" required>
+                    <label id="idLabel">Student ID (22-XXXXX)</label>
+                    <i class='bxr  bx-user-id-card'></i> 
+                </div>
+
+                <div class="input-box animation" style="--i:21;--j:4;">
+                    <input type="password" id="regPassword" placeholder="" required>
+                    <label>Password</label>
+                    <i class='bx bx-lock'></i>
+                </div>
+
+                <div class="input-box animation" id="verifyBox" style="--i:22;--j:5;">
+                    <input type="text" id="regVerificationCode" class="has-btn" placeholder="" required> 
+                    <label>Verification Code</label>
+                    <button type="button" class="send-code-btn" onclick="sendVerificationCode()">
+                         Send Code
+                    </button>
+                </div>
+                <div class="input-box animation hidden" id="secretBox" style="--i:22;--j:5;">
+                    <input type="password" id="regSecretCode" placeholder="" required>
+                    <label>Admin Secret Code</label>
+                    <i class='bx bx-key'></i> 
+                </div>
+
+                <button type="button" class="btn animation" onclick="handleRegistrationDispatch()" style="--i:23;--j:6;">Sign Up</button>
+                
+                <div class="logreg-link animation" style="--i:24;--j:7;">
+                    <p> Already have an account? <a href="#" class="login-link" id="loginBtn"> ➡ Login</a></p>
+                </div>
+            </form>
+        </div>
+
+        <div class="info-text register">
+    <h2 class="animation" style="--i:17;--j:0;">Welcome!</h2>
+    <p class="animation" style="--i:18;--j:1;"> 
+        <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img" style="width:180px"> 
+    </p>
+</div>
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCImQfezmlDpQPV_-gKFykIhcASJxv2RdY",
+      authDomain: "cdm-feedback.firebaseapp.com",
+      projectId: "cdm-feedback",
+      storageBucket: "cdm-feedback.firebasestorage.app",
+      messagingSenderId: "219362528866",
+      appId: "1:219362528866:web:207d114926d4dddb6e4b3b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- EMAILJS CONFIGURATION ---
+    (function(){
+        // REPLACE THIS: Put your Public Key from EmailJS Account here
+        emailjs.init("_rfBw_AXcyEzf55eg"); 
+    })();
+
+    const ADMIN_SECRET_KEY = "CDM-ADMIN-2025"; 
+    let generatedVerificationCode = null;
+
+    // --- 1. SLIDER & ROLE UI LOGIC ---
+    window.setRole = function(role) {
+        document.getElementById('regRole').value = role;
+
+        // Toggle Tab Styles
+        const btnStudent = document.getElementById('btn-student');
+        const btnAdmin = document.getElementById('btn-admin');
+        
+        // Toggle Containers
+        const verifyBox = document.getElementById('verifyBox');
+        const secretBox = document.getElementById('secretBox');
+        const idLabel = document.getElementById('idLabel');
+        
+        const verifyInput = document.getElementById('regVerificationCode');
+        const secretInput = document.getElementById('regSecretCode');
+
+        if (role === 'Student') {
+            // STUDENT MODE
+            btnStudent.classList.add('active');
+            btnAdmin.classList.remove('active');
+            
+            verifyBox.classList.remove('hidden');
+            secretBox.classList.add('hidden');
+            
+            verifyInput.setAttribute('required', ''); 
+            secretInput.removeAttribute('required');   
+            
+            idLabel.innerText = "Student ID (22-XXXXX)";
+        } else {
+            // FACULTY MODE
+            btnAdmin.classList.add('active');
+            btnStudent.classList.remove('active');
+            
+            verifyBox.classList.add('hidden');
+            secretBox.classList.remove('hidden');
+            
+            secretInput.setAttribute('required', '');  
+            verifyInput.removeAttribute('required');   
+            
+            idLabel.innerText = "Faculty ID (FAC-XXXX)";
+        }
+    }
+
+    // --- 2. VERIFICATION CODE LOGIC (FIXED) ---
+    window.sendVerificationCode = function() {
+        const email = document.getElementById('regEmail').value;
+        if (!email || email.indexOf('@') === -1) {
+            Swal.fire('Error', 'Please enter a valid email address first.', 'error');
+            return;
+        }
+
+        // 1. Generate Random Code
+        generatedVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
+        
+        // 2. Show Loading
+        Swal.fire({
+            title: 'Sending Code...',
+            text: 'Please wait while we send the email.',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        // 3. Send Email via EmailJS
+        const templateParams = {
+            email: email,                  // Matches {{email}} in your screenshot
+            passcode: generatedVerificationCode // Matches {{passcode}} in your screenshot
+        };
+
+        // REPLACE THESE: Use your Service ID and Template ID from EmailJS
+        emailjs.send('service_qv9ifsf', 'template_jfwk1px', templateParams)
+            .then(function(response) {
+                // SUCCESS: Email Sent
+                Swal.fire({
+                    title: 'CODE SENT!',
+                    // Notice: We do NOT show the code here anymore
+                    html: `A verification code has been sent to <strong>${email}</strong>.<br>Please check your inbox or spam folder.`,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#69da8f'
+                });
+            }, function(error) {
+                // ERROR: Email Failed
+                console.error('EmailJS Error:', error);
+                Swal.fire('Error', 'Failed to send email. Check your internet or Key configuration.', 'error');
+            });
+    }
+
+    // --- 3. REGISTRATION LOGIC ---
+    window.handleRegistrationDispatch = function() {
+        const role = document.getElementById('regRole').value;
+        if (role === 'Student') {
+            registerStudent();
+        } else {
+            registerAdmin();
+        }
+    }
+
+    async function registerStudent() {
+        const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const enteredCode = document.getElementById('regVerificationCode').value;
+
+        if (!idNumber || !email || !password || !enteredCode) {
+            Swal.fire('Error', 'Please fill in all required fields.', 'error'); return;
+        }
+        
+        if (generatedVerificationCode === null || enteredCode !== generatedVerificationCode) {
+            Swal.fire('Verification Failed', 'Incorrect or expired verification code.', 'error'); return;
+        }
+        if (!/^[0-9]{2}-/.test(idNumber)) {
+            Swal.fire('Security Error', 'Student ID must follow format YY-XXXXX.', 'error'); return;
+        }
+        if (password.length < 6) {
+            Swal.fire('Error', 'Password must be at least 6 characters.', 'warning'); return;
+        }
+
+        await finalizeRegistration(email, password, idNumber, 'Student');
+    }
+
+    async function registerAdmin() {
+        const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
+        const secretCode = document.getElementById('regSecretCode').value;
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+
+        if (!idNumber || !email || !password || !secretCode) {
+            Swal.fire('Error', 'Please fill in all required fields.', 'error'); return;
+        }
+        if (secretCode !== ADMIN_SECRET_KEY) {
+            Swal.fire('Unauthorized', 'Incorrect Secret Code.', 'error'); return;
+        }
+        if (!idNumber.startsWith('FAC-')) {
+            Swal.fire('Security Error', 'Faculty ID must start with "FAC-".', 'error'); return;
+        }
+        if (password.length < 6) {
+            Swal.fire('Error', 'Password must be at least 6 characters.', 'warning'); return;
+        }
+
+        await finalizeRegistration(email, password, idNumber, 'Admin');
+    }
+
+    async function finalizeRegistration(email, password, idNumber, role) {
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            await setDoc(doc(db, "users", user.uid), {
+                studentId: idNumber,
+                email: email,
+                role: role
+            });
+
+            Swal.fire({
+                title: 'SUCCESS!',
+                text: `Welcome, ${role}! Account created. Please Login.`,
+                icon: 'success',
+                confirmButtonColor: '#69da8f'
+            }).then(() => {
+                // Slide back to Login screen
+                document.querySelector('.wrapper').classList.remove('active');
+            });
+
+        } catch (error) {
+            console.error(error);
+            let msg = error.message;
+            if (error.code === "auth/email-already-in-use") msg = "Email is already registered.";
+            Swal.fire('Error', msg, 'error');
+        }
+    }
+
+    // --- 4. LOGIN LOGIC ---
+    window.handleLogin = async function() {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            Swal.fire('Error', 'Please enter both email and password.', 'error');
+            return;
+        }
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                const role = userData.role;
+
+                const Toast = Swal.mixin({
+                    toast: true, position: 'top-end', showConfirmButton: false, timer: 2000, timerProgressBar: true,
+                });
+                await Toast.fire({ icon: 'success', title: `Welcome back, ${role}!` });
+
+                setTimeout(() => { 
+                    if (role === 'Admin') {
+                        window.location.href = "admin_dashboard.html";
+                    } else {
+                        window.location.href = "index.html"; 
+                    }
+                }, 1500);
+            } else {
+                window.location.href = "index.html";
+            }
+        } catch (error) {
+            console.error(error);
+            let msg = "Login failed.";
+            if(error.code === "auth/user-not-found" || error.code === "auth/invalid-credential") msg = "Invalid email or password.";
+            Swal.fire('Error', msg, 'error');
+        }
+    }
+
+    // Initialize Default View & Animations
+    window.onload = function() {
+        // 1. Set Default Role
+        setRole('Student');
+
+        // 2. ACTIVATE SLIDING ANIMATION
+        const wrapper = document.querySelector('.wrapper');
+        const registerLink = document.querySelector('.register-link'); // The "Sign Up" link
+        const loginLink = document.querySelector('.login-link');       // The "Login" link
+
+        // When "Sign Up" is clicked -> Add 'active' class (Slides to Register)
+        if (registerLink) {
+            registerLink.onclick = (e) => {
+                e.preventDefault(); 
+                wrapper.classList.add('active');
+            };
+        }
+
+        // When "Login" is clicked -> Remove 'active' class (Slides back to Login)
+        if (loginLink) {
+            loginLink.onclick = (e) => {
+                e.preventDefault();
+                wrapper.classList.remove('active');
+            };
+        }
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDM - Submit Feedback</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="..\css/dashboard.css">
+    
+    <style>
+        /* --- PAGE SPECIFIC OVERRIDES --- */
+        /* These ensure the form elements match the Neon Dashboard theme */
+
+        .form-container-custom {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(105, 218, 143, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* Header Line Animation */
+        .form-header-row {
+            position: relative;
+            color: #69da8f;
+            font-weight: 800;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(105, 218, 143, 0.5);
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            overflow: hidden;
+        }
+        
+        .form-header-row::after {
+            content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #69da8f 50%, transparent 100%);
+            background-size: 200% 100%;
+            animation: neon-flow 3s linear infinite;
+        }
+        @keyframes neon-flow { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+        /* Glass Inputs */
+        .custom-pill-input {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border: 1px solid #69da8f !important;
+            color: white !important;
+            border-radius: 30px;
+            padding: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .custom-pill-input:focus { box-shadow: 0 0 15px #69da8f !important; }
+        .custom-pill-input option { background: #021204; color: white; }
+
+        /* Text Area */
+        .custom-textarea {
+            background: rgba(0, 0, 0, 0.4) !important;
+            border: 1px solid #69da8f !important;
+            color: white !important;
+            border-radius: 15px;
+            padding: 15px;
+            height: 250px;
+            resize: none;
+        }
+        .custom-textarea:focus { box-shadow: 0 0 15px #69da8f !important; }
+
+        /* Star Rating */
+        .star-rating-inline i { color: #444; cursor: pointer; font-size: 2rem; margin: 0 5px; transition: 0.3s; }
+        .star-rating-inline i.active { color: #f4d03f; text-shadow: 0 0 15px #f4d03f; }
+        .star-rating-inline i:hover { color: #f4d03f; transform: scale(1.2); }
+
+        /* Submit Button */
+        .btn-submit-custom {
+            background: transparent; border: 2px solid #69da8f; color: #69da8f;
+            font-weight: 800; border-radius: 30px; padding: 10px 30px; transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-submit-custom:hover { background: #69da8f; color: black; box-shadow: 0 0 20px #69da8f; }
+        
+        /* Bottom Input */
+        .custom-label-green { background: #69da8f; color: black; font-weight: 700; border: none; }
+        .custom-input-green { background: rgba(0, 0, 0, 0.4); border: 1px solid #69da8f; color: white; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        
+        <div class="col-md-2 sidebar d-none d-md-flex">
+            <div class="logo-area">
+                <img src="..\img/logo.jpg" alt="CDM Logo" class="logo-img">
+            </div>
+            <div class="profile-section">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <h3 id="sidebarStudentId">Loading...</h3>
+                <span style="color: #aaa; font-size: 0.8rem;">Student Portal</span>
+            </div>
+            <a href="#" class="logout-btn" onclick="confirmLogout()">
+                LOG OUT <i class="fas fa-sign-out-alt ms-2"></i>
+            </a>
+        </div>
+
+        <div class="col-md-10 main-content">
+            
+            <div class="top-nav-bar d-flex justify-content-center align-items-center">
+                <div class="nav-pills-custom">
+                    <a href="index.html" class="btn">Dashboard</a>
+                    <a href="submit_feedback.html" class="btn active-link">Submit Feedback</a>
+                    <a href="my_feedback.html" class="btn">My Feedback</a>
+                </div>
+            </div>
+
+            <div class="dashboard-body">
+                <div class="text-center mb-5">
+                    <h1 class="neon-text" style="font-size: 2.5rem;">SUBMIT FEEDBACK</h1>
+                    <p class="text-white-50" style="letter-spacing: 1px;">Share your thoughts to help us improve.</p>
+                </div>
+
+                <div class="form-container-custom">
+                    
+                    <div class="form-header-row">
+                        <i class="fas fa-pen-fancy me-2"></i> Write a Feedback
+                    </div>
+
+                    <form onsubmit="return false;"> 
+                        <div class="row mt-4">
+                            
+                            <div class="col-md-5 d-flex flex-column gap-3">
+                                <input type="text" id="codeName" class="form-control custom-pill-input" placeholder="Code Name (Optional)">
+                                
+                                <select id="yearLevel" class="form-select custom-pill-input">
+                                    <option selected disabled>Select Year Level</option>
+                                    <option>1st Year</option>
+                                    <option>2nd Year</option>
+                                    <option>3rd Year</option>
+                                    <option>4th Year</option>
+                                </select>
+                                
+                                <select id="course" class="form-select custom-pill-input">
+                                    <option selected disabled>Select Course</option>
+                                    <option>BSCS</option>
+                                    <option>BSIT</option>
+                                    <option>BSCPE</option>
+                                    <option>BSEd</option>
+                                    <option>BSBA</option>
+                                </select>
+                                
+                                <select id="institute" class="form-select custom-pill-input">
+                                    <option selected disabled>Select Institute</option>
+                                    <option>Institute of Computer Studies</option>
+                                    <option>Institute of Engineering</option>
+                                    <option>Institute of Education</option>
+                                    <option>Institute of Business</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-7">
+                                <div class="textarea-wrapper mb-3">
+                                    <textarea id="feedbackMessage" class="form-control custom-textarea" placeholder="Type your honest feedback here..."></textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-8 mb-2">
+                                        <div class="input-group">
+                                            <span class="input-group-text custom-label-green">To:</span>
+                                            <input type="text" id="recipient" class="form-control custom-input-green" placeholder="e.g. Dean / Faculty">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button type="button" class="btn btn-submit-custom w-100" onclick="saveToFirebase()">
+                                            SUBMIT <i class="fas fa-paper-plane ms-1"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCImQfezmlDpQPV_-gKFykIhcASJxv2RdY",
+      authDomain: "cdm-feedback.firebaseapp.com",
+      projectId: "cdm-feedback",
+      storageBucket: "cdm-feedback.firebasestorage.app",
+      messagingSenderId: "219362528866",
+      appId: "1:219362528866:web:207d114926d4dddb6e4b3b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // 1. Check Auth & Load Sidebar
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                document.getElementById("sidebarStudentId").innerText = docSnap.data().studentId;
+            }
+        } else {
+             window.location.href = "login-register.html"; // Adjust if your login file has a different name
+        }
+    });
+
+    // 2. Save Function (NOW INCLUDES UID)
+    window.saveToFirebase = async function() {
+        const user = auth.currentUser;
+        
+        if (!user) {
+            Swal.fire('Error', 'You are not logged in!', 'error');
+            return;
+        }
+
+        const codeName = document.getElementById('codeName').value;
+        const year = document.getElementById('yearLevel').value;
+        const course = document.getElementById('course').value;
+        const institute = document.getElementById('institute').value;
+        const message = document.getElementById('feedbackMessage').value;
+        const recipient = document.getElementById('recipient').value;
+        
+        const stars = document.querySelectorAll('.star-rating-inline .active').length;
+
+        if(!message) {
+            Swal.fire({
+                title: 'Empty Feedback?',
+                text: 'Please write your message before submitting.',
+                icon: 'warning',
+                confirmButtonColor: '#69da8f',
+                background: '#021204', color: '#fff'
+            });
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "feedbacks"), {
+                uid: user.uid,  // <--- THIS IS THE CRITICAL FIX
+                student_codename: codeName || "Anonymous",
+                year: year !== "Select Year Level" ? year : "N/A",
+                course: course !== "Select Course" ? course : "N/A",
+                institute: institute !== "Select Institute" ? institute : "General",
+                message: message,
+                rating: stars,
+                recipient: recipient || "General",
+                status: "Pending", 
+                timestamp: serverTimestamp()
+            });
+
+            Swal.fire({
+                title: 'SUCCESS!',
+                text: 'Your feedback has been sent.',
+                icon: 'success',
+                confirmButtonColor: '#69da8f',
+                background: '#021204', color: '#fff'
+            }).then(() => {
+                window.location.href = "my_feedback.html"; 
+            });
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire('Error', 'Submission failed.', 'error');
+        }
+    }
+
+    window.confirmLogout = function() {
+        Swal.fire({
+            title: 'Logout?', icon: 'question', showCancelButton: true,
+            confirmButtonText: 'Logout', cancelButtonText: 'Cancel',
+            confirmButtonColor: '#69da8f', cancelButtonColor: '#d33',
+            background: '#021204', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                signOut(auth).then(() => window.location.href = "login-register.html");
+            }
+        });
+    }
+</script>
+
+<script>
+    function rate(star, value) {
+        let stars = star.parentElement.children;
+        for (let i = 0; i < stars.length; i++) {
+            if (i < value) stars[i].classList.add('active');
+            else stars[i].classList.remove('active');
+        }
+    }
+</script>
+
+</body>
+</html>

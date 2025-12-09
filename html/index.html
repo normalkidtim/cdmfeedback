@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDM Student Dashboard</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <link rel="stylesheet" href="..\css/dashboard.css">
+    
+    <style>
+        /* Chart Container Adjustment */
+        .chart-container {
+            position: relative; 
+            height: 250px; 
+            width: 100%;
+        }
+
+        /* --- NEW CUSTOM SCROLLBAR FOR DASHBOARD LIST --- */
+        #recentFeedbackList::-webkit-scrollbar {
+            width: 8px; /* Width of the scrollbar */
+        }
+        #recentFeedbackList::-webkit-scrollbar-thumb {
+            background: #69da8f; border-radius: 4px; box-shadow: 0 0 5px #69da8f;  /* Neon green thumb with transparency */
+            border-radius: 10px; /* Rounded corners for the thumb */
+        }
+        #recentFeedbackList::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2); /* Dark transparent track */
+            border-radius: 10px; /* Rounded corners for the track */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        
+        <div class="col-md-2 sidebar d-none d-md-flex">
+            <div class="logo-area">
+                <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img">
+            </div>
+            <div class="profile-section">
+                <i class="fas fa-user-circle profile-icon"></i>
+                <h3 id="sidebarStudentId">Loading...</h3>
+                <span style="color: #aaa; font-size: 0.8rem;">Student Portal</span>
+            </div>
+            <a href="#" class="logout-btn" onclick="confirmLogout()">
+                LOG OUT <i class="fas fa-sign-out-alt ms-2"></i>
+            </a>
+        </div>
+
+        <div class="col-md-10 main-content">
+            
+            <div class="top-nav-bar d-flex justify-content-center align-items-center">
+                <div class="nav-pills-custom">
+                    <a href="index.html" class="btn active-link">Dashboard</a>
+                    <a href="submit_feedback.html" class="btn">Submit Feedback</a>
+                    <a href="my_feedback.html" class="btn">My Feedback</a>
+                </div>
+            </div>
+
+            <div class="dashboard-body">
+                <div class="text-center mb-5">
+                    <h1 class="neon-text" style="font-size: 2.5rem;">WELCOME STUDENTS</h1>
+                    <p class="text-white-50" style="letter-spacing: 1px;">Your voice matters. Help us improve CDM.</p>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-paper-plane"></i> Submitted</div>
+                            <div class="stat-number text-neon" id="totalCount">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending</div>
+                            <div class="stat-number text-warning-glow" id="pendingCount">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Resolved</div>
+                            <div class="stat-number text-success-glow" id="resolvedCount">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-chart-line"></i> Response Rate</div>
+                            <div class="stat-number" style="color: #3498db; text-shadow: 0 0 10px #3498db;" id="responseRate">0%</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-7">
+                        <div class="glass-card h-100 p-4">
+                            <div class="card-header-custom text-center border-bottom border-secondary pb-2 mb-3">
+                                <i class="fas fa-chart-pie"></i> Real-time Analytics
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="feedbackChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-5">
+                        <div class="glass-card h-100 p-4">
+                            <div class="card-header-custom text-center border-bottom border-secondary pb-2 mb-3">
+                                <i class="fas fa-history"></i> Most Recent
+                            </div>
+                            <div id="recentFeedbackList" class="d-flex flex-column gap-3" style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                                <p class="text-center text-white-50 mt-4" style="font-style: italic;">Loading recent feedback...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, limit, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCImQfezmlDpQPV_-gKFykIhcASJxv2RdY",
+      authDomain: "cdm-feedback.firebaseapp.com",
+      projectId: "cdm-feedback",
+      storageBucket: "cdm-feedback.firebasestorage.app",
+      messagingSenderId: "219362528866",
+      appId: "1:219362528866:web:207d114926d4dddb6e4b3b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // 1. Sidebar Info
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                document.getElementById("sidebarStudentId").innerText = docSnap.data().studentId;
+            }
+
+            // 2. Load Data
+            loadDashboardData(user.uid);
+            loadRecentFeedback(user.uid);
+
+        } else {
+             window.location.href = "login-register.html";
+        }
+    });
+
+    // --- ANALYTICS ---
+    function loadDashboardData(uid) {
+        const q = query(collection(db, "feedbacks"), where("uid", "==", uid));
+        
+        onSnapshot(q, (snapshot) => {
+            let total = 0;
+            let resolved = 0;
+            let pending = 0;
+
+            snapshot.forEach((doc) => {
+                total++;
+                const status = doc.data().status;
+                if (status === "Resolved") resolved++;
+                else pending++; 
+            });
+
+            // Update Stats
+            let rate = total > 0 ? Math.round((resolved / total) * 100) : 0;
+            document.getElementById("totalCount").innerText = total;
+            document.getElementById("resolvedCount").innerText = resolved;
+            document.getElementById("pendingCount").innerText = pending;
+            document.getElementById("responseRate").innerText = rate + "%";
+
+            // Update Chart
+            updateChart(total, pending, resolved);
+        });
+    }
+
+    // --- RECENT LIST ---
+    function loadRecentFeedback(uid) {
+        const q = query(
+            collection(db, "feedbacks"), 
+            where("uid", "==", uid), 
+            orderBy("timestamp", "desc"), 
+            limit(3)
+        );
+        
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById("recentFeedbackList");
+            container.innerHTML = ""; 
+
+            if (!snapshot.empty) {
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const badgeClass = data.status === "Resolved" ? "badge-neon-success" : "badge-neon-warning";
+                    
+                    const itemHTML = `
+                        <div class="p-3 mb-2" style="background: rgba(255,255,255,0.05); border-radius: 10px; border-left: 2px solid ${data.status === 'Resolved' ? '#69da8f' : '#f4d03f'};">
+                            <p class="mb-2 text-white" style="font-size: 0.9rem; font-style: italic;">
+                                "${data.message}"
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-white-50">${data.recipient || 'General'}</small>
+                                <span class="${badgeClass}">${data.status}</span>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += itemHTML;
+                });
+            } else {
+                container.innerHTML = '<p class="text-center text-white-50 mt-4" style="font-style: italic;">No feedback submitted yet.</p>';
+            }
+        }, (error) => {
+            if(error.message.includes("requires an index")) {
+                console.warn("FIREBASE INDEX REQUIRED for Recent List: Check console link.");
+            }
+        });
+    }
+
+    // --- CHART CONFIGURATION (UPDATED) ---
+    let feedbackChart = null;
+
+    function updateChart(submitted, pending, resolved) {
+        const canvas = document.getElementById('feedbackChart');
+        
+        // Safety check if element exists
+        if (!canvas) return;
+
+        if (feedbackChart) {
+            feedbackChart.destroy();
+        }
+
+        // Create new chart
+        feedbackChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: ['Submitted', 'Pending', 'Resolved'],
+                datasets: [{
+                    label: 'Count',
+                    data: [submitted, pending, resolved],
+                    backgroundColor: [
+                        'rgba(52, 152, 219, 0.6)', // Blue
+                        'rgba(244, 208, 63, 0.6)', // Gold
+                        'rgba(105, 218, 143, 0.6)' // Green
+                    ],
+                    borderColor: [
+                        '#3498db',
+                        '#f4d03f',
+                        '#69da8f'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 5,
+                    barThickness: 50, // Fixed bar width
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#69da8f',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: '#ccc', stepSize: 1 }, 
+                        grid: { color: 'rgba(255,255,255,0.1)' } 
+                    },
+                    x: { 
+                        ticks: { color: '#fff', font: { weight: 'bold' } }, 
+                        grid: { display: false } 
+                    }
+                }
+            }
+        });
+    }
+    
+    window.confirmLogout = function() {
+        Swal.fire({
+            title: 'Logout?', icon: 'question', showCancelButton: true,
+            confirmButtonText: 'Logout', cancelButtonText: 'Cancel',
+            confirmButtonColor: '#69da8f', cancelButtonColor: '#d33',
+            background: '#021204', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                signOut(auth).then(() => window.location.href = "login-register.html");
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDM - Faculty Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    
+    <style>
+        /* Lock body height to prevent double scrollbars */
+        body, html { height: 100%; overflow: hidden; }
+        body { display: none; } 
+
+        .main-content {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dashboard-body {
+            flex: 1; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            padding-bottom: 10px; 
+        }
+
+        #feedbackScrollContainer {
+            flex: 1; 
+            overflow-y: auto; 
+            padding-right: 10px; 
+            max-height: none !important; 
+        }
+        
+        /* Custom Scrollbar Styles */
+        #feedbackScrollContainer::-webkit-scrollbar { width: 8px; }
+        #feedbackScrollContainer::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); border-radius: 4px; }
+        #feedbackScrollContainer::-webkit-scrollbar-thumb { background: #69da8f; border-radius: 4px; box-shadow: 0 0 5px #69da8f; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        
+        <div class="col-md-2 sidebar d-none d-md-flex flex-column">
+            <div class="logo-area">
+                <img src="../img/logo.jpg" alt="CDM Logo" class="logo-img">
+            </div>
+            <div class="profile-section">
+                <i class="fas fa-user-shield profile-icon"></i>
+                <h3>ADMIN</h3>
+                <span id="facultyEmailDisplay">Loading...</span>
+            </div>
+            
+            <div class="mt-4 mb-5 d-flex flex-column gap-3 w-75 mx-auto">
+                <p class="sidebar-header">FILTERS</p>
+                <button class="filter-btn-sidebar active" data-institute="All" onclick="filterByInstitute('All', this)">All Feedback</button>
+                <button class="filter-btn-sidebar" data-institute="Institute of Computer Studies" onclick="filterByInstitute('Institute of Computer Studies', this)">ICS</button>
+                <button class="filter-btn-sidebar" data-institute="Institute of Education" onclick="filterByInstitute('Institute of Education', this)">Education</button>
+                <button class="filter-btn-sidebar" data-institute="Institute of Business" onclick="filterByInstitute('Institute of Business', this)">Business</button>
+            </div>
+            
+            <a href="#" class="logout-btn" onclick="confirmLogout()">
+                LOG OUT <i class="fas fa-sign-out-alt ms-2"></i>
+            </a>
+        </div>
+
+        <div class="col-md-10 main-content">
+            <div class="top-nav-bar">
+                <div class="neon-text fs-4">FACULTY FEEDBACK PORTAL</div>
+            </div>
+
+            <div class="dashboard-body">
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-inbox"></i> Total Received</div>
+                            <div class="stat-number" id="adminTotal">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-clock"></i> Pending</div>
+                            <div class="stat-number text-warning-glow" id="adminPending">0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="card-header-custom"><i class="fas fa-check-circle"></i> Resolved</div>
+                            <div class="stat-number text-success-glow" id="adminResolved">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="feedbackScrollContainer">
+                    <div class="row" id="adminFeedbackList">
+                        <div class="text-center text-white mt-5">Loading feedback data...</div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCImQfezmlDpQPV_-gKFykIhcASJxv2RdY",
+      authDomain: "cdm-feedback.firebaseapp.com",
+      projectId: "cdm-feedback",
+      storageBucket: "cdm-feedback.firebasestorage.app",
+      messagingSenderId: "219362528866",
+      appId: "1:219362528866:web:207d114926d4dddb6e4b3b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    
+    let currentInstituteFilter = 'All'; 
+
+    function directRedirect(filename) { window.location.href = filename; }
+
+    function setupRealTimeListener(instituteFilter) {
+        let q;
+        if (instituteFilter === 'All') {
+            q = query(collection(db, "feedbacks"), orderBy("timestamp", "desc"));
+        } else if (instituteFilter === 'Institute of Computer Studies') {
+            q = query(
+                collection(db, "feedbacks"), 
+                where("institute", "in", ["Institute of Computer Studies", "Institute of Engineering"]), 
+                orderBy("timestamp", "desc")
+            );
+        } else {
+            q = query(
+                collection(db, "feedbacks"), 
+                where("institute", "==", instituteFilter), 
+                orderBy("timestamp", "desc")
+            );
+        }
+
+        onSnapshot(q, (snapshot) => {
+            const container = document.getElementById('adminFeedbackList');
+            container.innerHTML = ""; 
+            let total = 0, pending = 0, resolved = 0;
+
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="text-center text-white mt-5">No feedback found.</div>';
+            }
+
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const id = docSnap.id;
+                total++;
+                if(data.status === 'Resolved') resolved++; else pending++;
+
+                let dateStr = "Recently";
+                if(data.timestamp) dateStr = new Date(data.timestamp.seconds * 1000).toLocaleDateString();
+
+                const isResolved = data.status === 'Resolved';
+                const statusBadge = isResolved 
+                    ? '<span class="badge-neon-success">Resolved</span>' 
+                    : '<span class="badge-neon-warning">Pending</span>';
+
+                const actionButton = isResolved
+                    ? `<button class="btn btn-sm btn-outline-neon-warning" onclick="window.adminToggleStatus('${id}', 'Resolved')"><i class="fas fa-undo"></i> Undo</button>`
+                    : `<button class="btn btn-sm btn-outline-neon-success" onclick="window.adminToggleStatus('${id}', 'Pending')"><i class="fas fa-check"></i> Resolve</button>`;
+
+                const cardHTML = `
+                    <div class="col-12 mb-3">
+                        <div class="glass-card p-3">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3 text-center">
+                                    <div class="rounded-circle d-flex align-items-center justify-content-center neon-border-circle" style="width: 50px; height: 50px;">
+                                        <i class="fas fa-user-graduate text-neon fs-4"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 text-white">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h5 class="mb-0 fw-bold text-neon">${data.student_codename} <small class="text-white-50 fs-6">(${data.course || 'N/A'})</small></h5>
+                                        <small class="text-white-50">${dateStr}</small>
+                                    </div>
+                                    <div class="mb-2 text-white-50" style="font-size: 0.9rem;">
+                                        Institute: <strong class="text-white">${data.institute || 'General'}</strong> | To: <strong class="text-white">${data.recipient || 'N/A'}</strong>
+                                    </div>
+                                    <p class="message-box">"${data.message}"</p>
+                                    ${data.adminReply ? `<div class="reply-box"><i class="fas fa-reply me-2"></i><strong>You:</strong> ${data.adminReply}</div>` : ''}
+                                    <div class="d-flex align-items-center gap-2 mt-3">
+                                        ${statusBadge}
+                                        ${actionButton}
+                                        <button class="btn btn-sm btn-outline-neon-primary" onclick="window.adminReply('${id}')"><i class="fas fa-comment"></i> Reply</button>
+                                        <button class="btn btn-sm btn-outline-neon-danger ms-auto" onclick="window.adminDelete('${id}')"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+            if (instituteFilter === 'All') {
+                document.getElementById('adminTotal').innerText = total;
+                document.getElementById('adminPending').innerText = pending;
+                document.getElementById('adminResolved').innerText = resolved;
+            }
+        }, (error) => {
+            console.error("Error fetching data:", error);
+            if(error.message.includes("requires an index")) {
+                alert("SETUP REQUIRED: Open browser console (F12) and click the Firebase link to create the new Index.");
+            }
+        });
+    }
+    window.filterByInstitute = function(institute, buttonElement) {
+        currentInstituteFilter = institute;
+        document.querySelectorAll('.filter-btn-sidebar').forEach(btn => btn.classList.remove('active'));
+        buttonElement.classList.add('active');
+        setupRealTimeListener(institute);
+    }
+    
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            document.getElementById('facultyEmailDisplay').innerText = user.email;
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().role === "Admin") {
+                document.body.style.display = "block";
+                setupRealTimeListener('All');
+            } else { directRedirect("index.html"); }
+        } else { directRedirect("login-register.html"); }
+    });
+
+    window.adminToggleStatus = async function(id, currentStatus) {
+        const newStatus = currentStatus === "Resolved" ? "Pending" : "Resolved";
+        await updateDoc(doc(db, "feedbacks", id), { status: newStatus });
+    }
+    window.adminReply = async function(id) {
+        const { value: text } = await Swal.fire({
+            title: 'Reply to Student',
+            input: 'textarea', 
+            inputPlaceholder: 'Type your response...',
+            background: '#021204', color: '#fff',
+            confirmButtonColor: '#69da8f', cancelButtonColor: '#d33',
+            customClass: { input: 'swal-input-dark' } 
+        });
+        if (text) { await updateDoc(doc(db, "feedbacks", id), { adminReply: text }); }
+    }
+    window.adminDelete = async function(id) {
+        Swal.fire({
+            title: 'Delete Record?', icon: 'warning', showCancelButton: true,
+            confirmButtonColor: '#d33', confirmButtonText: 'Delete',
+            background: '#021204', color: '#fff'
+        }).then(async (result) => {
+            if (result.isConfirmed) await deleteDoc(doc(db, "feedbacks", id));
+        });
+    }
+    window.confirmLogout = function() {
+        Swal.fire({
+            title: 'Logout?', icon: 'question', showCancelButton: true,
+            confirmButtonColor: '#69da8f', confirmButtonText: 'Logout',
+            background: '#021204', color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) { signOut(auth).then(() => directRedirect("login-register.html")); }
+        });
+    }
+</script>
+
+</body>
+</html>
