@@ -122,8 +122,6 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, getDoc, where } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
@@ -144,38 +142,9 @@
     
     let currentInstituteFilter = 'All'; 
     
-    // --- EMAILJS CONFIGURATION (You need to update your Service ID and Template ID) ---
-    (function(){
-        emailjs.init("YOUR_EMAILJS_PUBLIC_KEY"); // ⚠️ REPLACE with your actual Public Key
-    })();
-    const EMAILJS_SERVICE_ID = 'service_qv9ifsf'; // ⚠️ REPLACE with your actual Service ID
-    const EMAILJS_TEMPLATE_ID = 'template_faculty_feedback'; // ⚠️ You need to CREATE a new EmailJS Template for faculty feedback
+    // REMOVED: All EmailJS configuration and the sendFacultyEmail function
 
     function directRedirect(filename) { window.location.href = filename; }
-
-    // --- NEW EMAIL FUNCTION ---
-    async function sendFacultyEmail(feedbackData) {
-        // NOTE: In a real system, faculty_email should be dynamically fetched based on the recipient name (feedbackData.recipient). 
-        // For a basic copy-paste solution, you need to manually map or use a static address for testing.
-        const templateParams = {
-            to_recipient: feedbackData.recipient || "Faculty", // Use recipient field for faculty name
-            faculty_email: "faculty_member@cdm.edu", // ⚠️ REPLACE with the actual faculty email or fetch it from a database
-            student_info: feedbackData.student_codename,
-            feedback_message: feedbackData.message,
-            institute: feedbackData.institute,
-            course: feedbackData.course
-        };
-
-        try {
-            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
-            console.log("SUCCESS! Feedback email sent to faculty.");
-            return true;
-        } catch (error) {
-            console.error("FAILED to send email to faculty:", error);
-            Swal.fire('Email Error', 'Failed to send notification email to faculty member. Check console for details.', 'error');
-            return false;
-        }
-    }
 
     function setupRealTimeListener(instituteFilter) {
         let q;
@@ -224,11 +193,12 @@
                     actionButton = `<button class="btn btn-sm btn-outline-neon-warning" onclick="window.adminMarkSpam('${id}')"><i class="fas fa-redo"></i> Mark Spam</button>`;
                 } else if (status === 'Spam') {
                     statusBadge = '<span class="badge-neon-danger">Spam</span>';
-                    actionButton = `<button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApprovedAndSend('${id}', '${data.recipient}', \`${data.message.replace(/`/g, '\\`')}\`, '${data.institute}', '${data.course}', '${data.student_codename}')"><i class="fas fa-check"></i> Mark Valid & Send</button>`;
+                    // MODIFIED: Calling adminMarkApproved function without email logic
+                    actionButton = `<button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApproved('${id}', '${data.recipient}')"><i class="fas fa-check"></i> Mark Valid</button>`;
                 } else { // Pending Review
                     statusBadge = '<span class="badge-neon-warning">Pending Review</span>';
                     actionButton = `
-                        <button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApprovedAndSend('${id}', '${data.recipient}', \`${data.message.replace(/`/g, '\\`')}\`, '${data.institute}', '${data.course}', '${data.student_codename}')"><i class="fas fa-check"></i> Mark Valid & Send</button>
+                        <button class="btn btn-sm btn-outline-neon-success" onclick="window.adminMarkApproved('${id}', '${data.recipient}')"><i class="fas fa-check"></i> Mark Valid</button>
                         <button class="btn btn-sm btn-outline-neon-danger" onclick="window.adminMarkSpam('${id}')"><i class="fas fa-trash-alt"></i> Mark Spam</button>
                     `;
                 }
@@ -301,24 +271,20 @@
         Swal.fire({ title: 'Marked as Spam', icon: 'info', background: '#021204', color: '#fff', timer: 1500, showConfirmButton: false });
     }
 
-    window.adminMarkApprovedAndSend = async function(id, recipient, message, institute, course, studentCodename) {
-        const feedbackData = { recipient, message, institute, course, student_codename: studentCodename || 'Anonymous' };
+    // NEW FUNCTION: Only marks as approved without sending an email
+    window.adminMarkApproved = async function(id, recipient) {
+        // 1. Update Status directly
+        await updateDoc(doc(db, "feedbacks", id), { status: "Approved" });
         
-        // 1. Send Email Notification
-        const emailSent = await sendFacultyEmail(feedbackData);
-
-        if (emailSent) {
-            // 2. Update Status if Email was successful
-            await updateDoc(doc(db, "feedbacks", id), { status: "Approved" });
-            Swal.fire({ 
-                title: 'APPROVED & SENT!', 
-                text: `Feedback forwarded to ${recipient}. Status updated to Approved.`, 
-                icon: 'success', 
-                background: '#021204', 
-                color: '#fff', 
-                confirmButtonColor: '#69da8f'
-            });
-        }
+        // 2. Display Success message
+        Swal.fire({ 
+            title: 'APPROVED!', 
+            text: `Feedback for ${recipient} status updated to Approved.`, 
+            icon: 'success', 
+            background: '#021204', 
+            color: '#fff', 
+            confirmButtonColor: '#69da8f'
+        });
     }
     
     window.adminReply = async function(id) {

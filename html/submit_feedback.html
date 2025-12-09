@@ -158,9 +158,8 @@
                                 <select id="institute" class="form-select custom-pill-input">
                                     <option selected disabled>Select Institute</option>
                                     <option>Institute of Computer Studies</option>
-                                    <option>Institute of Engineering</option>
-                                    <option>Institute of Education</option>
                                     <option>Institute of Business</option>
+                                    <option>Institute of Education</option>
                                 </select>
                             </div>
 
@@ -173,7 +172,9 @@
                                     <div class="col-md-8 mb-2">
                                         <div class="input-group">
                                             <span class="input-group-text custom-label-green">To:</span>
-                                            <input type="text" id="recipient" class="form-control custom-input-green" placeholder="e.g. Dean / Faculty ID (FAC-XXXX)">
+                                            <select id="recipientSelect" class="form-select custom-input-green" required>
+                                                <option value="" disabled selected>Loading Faculty...</option>
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-md-4 text-end">
@@ -193,8 +194,9 @@
 </div>
 
 <script type="module">
+    // FIXED: Unified Firestore imports to 9.22.0 and added required functions
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, doc, getDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -209,21 +211,86 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    
+    let studentInstitute = null;
 
-    // 1. Check Auth & Load Sidebar
+    // 1. Check Auth & Load Sidebar & Fetch Institute
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                document.getElementById("sidebarStudentId").innerText = docSnap.data().studentId;
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    // FIX 2a: Ensures studentId displays, or uses email as fallback
+                    document.getElementById("sidebarStudentId").innerText = userData.studentId || user.email; 
+                    studentInstitute = userData.institute; 
+                } else {
+                     // Fallback if user document doesn't exist
+                    document.getElementById("sidebarStudentId").innerText = user.email;
+                }
+            } catch (e) {
+                console.error("Error fetching user data:", e);
+                document.getElementById("sidebarStudentId").innerText = "Error!";
             }
+            
+            // FIX 2b: Always call loadFacultyRecipients to attempt loading and display "General/Admin"
+            loadFacultyRecipients(studentInstitute);
+            
         } else {
-             window.location.href = "login-register.html"; // Adjust if your login file has a different name
+             window.location.href = "login-register.html";
         }
     });
 
-    // 2. Save Function (NOW INCLUDES UID AND NEW STATUS)
+    // 2. FUNCTION to load faculty recipients based on institute (FIXED)
+    async function loadFacultyRecipients(institute) {
+        const select = document.getElementById('recipientSelect');
+        // Initial setup
+        select.innerHTML = '<option value="" disabled selected>Loading Faculty...</option>';
+        
+        // Always include a general option
+        select.innerHTML += '<option value="General">General/Admin</option>';
+        
+        if (!institute || institute === "N/A") {
+            select.innerHTML += '<option disabled>Please ensure your institute is set in your profile.</option>';
+            select.options[0].text = "Select Faculty/Staff (Institute N/A)";
+            return;
+        }
+
+        try {
+            // Query for users who are 'Admin' AND belong to the student's institute
+            const facultyQuery = query(
+                collection(db, "users"),
+                where("role", "==", "Admin"),
+                where("institute", "==", institute)
+            );
+
+            const querySnapshot = await getDocs(facultyQuery);
+            
+            if (querySnapshot.empty) {
+                select.innerHTML += `<option disabled>No faculty found for ${institute}.</option>`;
+            } else {
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // Use a clearer display name for the faculty: LastName, FirstName (ID)
+                    const facultyName = `${data.lastName}, ${data.firstName} (${data.studentId})`; 
+                    const facultyId = data.studentId; 
+                    
+                    select.innerHTML += `<option value="${facultyId}">${facultyName}</option>`;
+                });
+            }
+            // Update the initial disabled selected option to show loading is complete
+            select.options[0].text = "Select Faculty/Staff"; 
+
+        } catch (e) {
+            console.error("Error loading faculty recipients:", e);
+            // This error often indicates a missing Firebase index. You may need to create one for (role, institute).
+            select.innerHTML += '<option disabled>Error loading faculty. Check console for possible missing index.</option>';
+        }
+    }
+
+
+    // 3. Save Function (reads from select)
     window.saveToFirebase = async function() {
         const user = auth.currentUser;
         
@@ -237,7 +304,7 @@
         const course = document.getElementById('course').value;
         const institute = document.getElementById('institute').value;
         const message = document.getElementById('feedbackMessage').value;
-        const recipient = document.getElementById('recipient').value.toUpperCase(); // Ensure recipient is uppercase for consistent filtering
+        const recipient = document.getElementById('recipientSelect').value; 
         
         const stars = document.querySelectorAll('.star-rating-inline .active').length;
 
@@ -245,6 +312,17 @@
             Swal.fire({
                 title: 'Empty Feedback?',
                 text: 'Please write your message before submitting.',
+                icon: 'warning',
+                confirmButtonColor: '#69da8f',
+                background: '#021204', color: '#fff'
+            });
+            return;
+        }
+
+        if(!recipient) {
+            Swal.fire({
+                title: 'No Recipient?',
+                text: 'Please select a faculty member or General/Admin before submitting.',
                 icon: 'warning',
                 confirmButtonColor: '#69da8f',
                 background: '#021204', color: '#fff'
@@ -261,8 +339,7 @@
                 institute: institute !== "Select Institute" ? institute : "General",
                 message: message,
                 rating: stars,
-                recipient: recipient || "General",
-                // 💡 NEW WORKFLOW: Initial status is Pending Review
+                recipient: recipient, 
                 status: "Pending Review", 
                 timestamp: serverTimestamp()
             });

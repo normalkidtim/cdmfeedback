@@ -83,12 +83,13 @@
                     <i class='bxr  bx-user-id-card'></i> 
                 </div>
 
-                <div class="input-box animation" id="studentInstituteBox" style="--i:20.5;--j:3.5;">
-                    <select id="regInstituteStudent" style="width: 100%; height: 100%; background: transparent; border: none; outline: none; border-bottom: 2px solid white; color: white; font-size: 14px; font-weight: 500; padding-right: 24px;">
+                <div class="input-box animation" id="instituteBox" style="--i:20.5;--j:3.5;">
+                    <select id="regInstitute" style="width: 100%; height: 100%; background: transparent; border: none; outline: none; border-bottom: 2px solid white; color: white; font-size: 14px; font-weight: 500; padding-right: 24px;" required>
                         <option value="" disabled selected style="background: #021204; color: #888;">Select Institute</option>
                         <option value="Institute of Computer Studies" style="background: #021204; color: white;">ICS</option>
                         <option value="Institute of Business" style="background: #021204; color: white;">IBE</option>
                         <option value="Institute of Education" style="background: #021204; color: white;">ITE</option>
+                        <option value="Institute of Engineering" style="background: #021204; color: white;">IOE</option>
                     </select>
                 </div>
 
@@ -165,12 +166,11 @@
         const verifyBox = document.getElementById('verifyBox');
         const secretBox = document.getElementById('secretBox');
         const idLabel = document.getElementById('idLabel');
-        const studentInstituteBox = document.getElementById('studentInstituteBox'); // New
-
+        const instituteBox = document.getElementById('instituteBox'); // Modified ID
         
         const verifyInput = document.getElementById('regVerificationCode');
         const secretInput = document.getElementById('regSecretCode');
-        const regInstituteStudent = document.getElementById('regInstituteStudent'); // New
+        const regInstitute = document.getElementById('regInstitute'); // Modified ID
 
         if (role === 'Student') {
             // STUDENT MODE
@@ -179,11 +179,11 @@
             
             verifyBox.classList.remove('hidden');
             secretBox.classList.add('hidden');
-            studentInstituteBox.classList.remove('hidden'); // Show Institute for student
+            instituteBox.classList.remove('hidden'); // Show Institute
             
             verifyInput.setAttribute('required', ''); 
             secretInput.removeAttribute('required');   
-            regInstituteStudent.setAttribute('required', ''); // Required for student
+            regInstitute.setAttribute('required', ''); // Required for student
             
             idLabel.innerText = "Student ID (22-XXXXX)";
         } else {
@@ -193,11 +193,11 @@
             
             verifyBox.classList.add('hidden');
             secretBox.classList.remove('hidden');
-            studentInstituteBox.classList.add('hidden'); // Hide Institute for faculty
+            instituteBox.classList.remove('hidden'); // MODIFIED: Show Institute for faculty too
             
             secretInput.setAttribute('required', '');  
             verifyInput.removeAttribute('required');
-            regInstituteStudent.removeAttribute('required'); // Not required for faculty
+            regInstitute.setAttribute('required', ''); // MODIFIED: Required for faculty
             
             idLabel.innerText = "Faculty ID (FAC-XXXX) or Super Admin ID";
         }
@@ -260,7 +260,7 @@
         // New Fields
         const firstName = document.getElementById('regFirstName').value.trim();
         const lastName = document.getElementById('regLastName').value.trim();
-        const institute = document.getElementById('regInstituteStudent').value;
+        const institute = document.getElementById('regInstitute').value; // Modified ID
         
         // Existing Fields
         const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
@@ -289,6 +289,7 @@
         // New Fields
         const firstName = document.getElementById('regFirstName').value.trim();
         const lastName = document.getElementById('regLastName').value.trim();
+        const institute = document.getElementById('regInstitute').value; // Modified ID
         
         // Existing Fields
         const idNumber = document.getElementById('regStudentId').value.trim().toUpperCase();
@@ -296,7 +297,7 @@
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
 
-        if (!firstName || !lastName || !idNumber || !email || !password || !secretCode) {
+        if (!firstName || !lastName || !institute || !idNumber || !email || !password || !secretCode) {
             Swal.fire('Error', 'Please fill in all required fields.', 'error'); return;
         }
         if (secretCode !== ADMIN_SECRET_KEY) {
@@ -312,8 +313,8 @@
             Swal.fire('Error', 'Password must be at least 6 characters.', 'warning'); return;
         }
 
-        // Institute is null for faculty/admin in this simplified structure
-        await finalizeRegistration(email, password, idNumber, 'Admin', firstName, lastName, null);
+        // Institute is now saved for admin too
+        await finalizeRegistration(email, password, idNumber, 'Admin', firstName, lastName, institute);
     }
 
     // FINALIZED REGISTRATION FUNCTION (UPDATED)
@@ -328,7 +329,7 @@
                 role: role,
                 firstName: firstName, // New
                 lastName: lastName,   // New
-                institute: institute  // Used for students, null for faculty/admin
+                institute: institute  // Saved for both student and faculty
             });
 
             Swal.fire({
